@@ -1,0 +1,24 @@
+display = hexadecimal;
+prec = 1024; 
+
+f = exp(x);
+I = [-log(2)/2; log(2)/2];
+
+p = fpminimax(f, 11, [|D...|], I);
+
+print("\nPolynomial:\n", p);
+print("\n\nMax absolute error:\n", infnorm(p - f, I));
+
+print("\n\n");
+for i from 0 to degree(p) do {
+    print("p[" @ i @ "] = ", coeff(p, i));
+};
+print("\n\n");
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_err = supnorm(p, f, I, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical):\n", abs_err);
+
+rel_err = supnorm(p, f, I, relative, 2^(-30));
+print("\nMaximum relative error (theoretical):\n", rel_err);
+
