@@ -1,5 +1,10 @@
-display = hexadecimal;
-prec = 1024; 
+display = hexadecimal!;
+prec = 1024!; 
+
+print("Some constants for range reduction:");
+print("INV_LN2: ", round(1.0/log(2), D, RN));
+print("  LN2_H: ", round(log(2), D, RN));
+print("  LN2_L: ", round(log(2) - round(log(2), D, RN), D, RN));
 
 f = exp(x);
 I = [-log(2)/2; log(2)/2];
