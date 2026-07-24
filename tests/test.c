@@ -53,7 +53,7 @@ test_exp_scalar(void)
         }
     }
 
-    printf("exp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  exp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -86,7 +86,7 @@ test_log_scalar(void)
         }
     }
 
-    printf("log - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -170,7 +170,7 @@ test_exp_avx2(void)
         }
     }
 
-    printf("exp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  exp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -214,7 +214,7 @@ test_log_avx2(void)
         }
     }
 
-    printf("log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 #endif
@@ -269,7 +269,7 @@ test_exp_avx512(void)
         }
     }
 
-    printf("exp - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  exp - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -313,7 +313,7 @@ test_log_avx512(void)
         }
     }
 
-    printf("log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 #endif
@@ -363,7 +363,7 @@ main(int argc, char *argv[])
     coy_profile_end();
 
 #if COY_PROFILE
-    printf("Total Runtime = %.3lf seconds at a frequency of %"PRIu64"\n",
+    printf("\n\nTotal Runtime = %.3lf seconds at a frequency of %"PRIu64"\n",
             coy_global_profiler.total_elapsed, coy_global_profiler.freq);
 
     u64 log_scalar_elapsed = 0;
