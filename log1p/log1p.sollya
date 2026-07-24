@@ -1,0 +1,24 @@
+display = hexadecimal!;
+prec = 1024!; 
+
+f = (log(1 + x) - x) / x^2;
+
+I = [sqrt(2) / 2 - 1; sqrt(2) - 1];
+print("\n\n");
+print(" Low Range: ", round(inf(I), double, RN));
+print("High Range: ", round(sup(I), double, RN));
+
+pf = fpminimax(f, 18, [|D...|], I);
+
+print("\n\n");
+for i from 0 to degree(pf) do {
+    print("pf[" @ i @ "] = ", coeff(pf, i));
+};
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_err = supnorm(x + x^2 * pf, log(1 + x), I, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical) f:\n", abs_err);
+
+rel_err = supnorm(x + x^2 * pf, log(1 + x), I, relative, 2^(-30));
+print("\nMaximum relative error (theoretical) f:\n", rel_err);
+
