@@ -236,7 +236,7 @@ eagle_avx512_exp_pd(__m512d x)
     r = _mm512_fnmadd_pd(n, LN2_LO, r);
 
     /* Range mask - polynomial is broken into two ranges, a low and a high range */
-    __mmask8 low_mask = _mm512_cmp_pd(r, _mm512_set1_pd(0.0), _CMP_LT_OQ);
+    __mmask8 low_mask = _mm512_cmp_pd_mask(r, _mm512_set1_pd(0.0), _CMP_LT_OQ);
 
     /* Low range polynomial coefficients */
     __m512d const c9l = _mm512_set1_pd(0x1.371bb70c11fd8p-19);
