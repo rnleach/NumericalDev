@@ -1,2 +1,7 @@
+# Editor files
 *.vim
+
+# Test programs
+profile
+test
 
