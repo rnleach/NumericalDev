@@ -6,9 +6,6 @@ I = [-log(2)/2; log(2)/2];
 
 p = fpminimax(f, 11, [|D...|], I);
 
-print("\nPolynomial:\n", p);
-print("\n\nMax absolute error:\n", infnorm(p - f, I));
-
 print("\n\n");
 for i from 0 to degree(p) do {
     print("p[" @ i @ "] = ", coeff(p, i));
@@ -17,8 +14,42 @@ print("\n\n");
 
 // Evaluate the theoretical maximum error of this polynomial
 abs_err = supnorm(p, f, I, absolute, 2^(-30));
-print("\nMaximum absolute error (theoretical):\n", abs_err);
+print("Maximum absolute error (theoretical):", abs_err);
 
 rel_err = supnorm(p, f, I, relative, 2^(-30));
-print("\nMaximum relative error (theoretical):\n", rel_err);
+print("Maximum relative error (theoretical):", rel_err);
+
+// Break it into two polynomials
+HalfRange = (sup(I) - inf(I)) / 2.0;
+IL = [inf(I), inf(I) + HalfRange];
+IH = [inf(I) + HalfRange, sup(I)];
+
+print("\n\n");
+print(" Low Range: ", round(inf(IL), double, RN));
+print(" Mid Range: ", round(inf(IH), double, RN));
+print("High Range: ", round(sup(IH), double, RN));
+
+half_deg = 9;
+pL = fpminimax(f, half_deg, [|D...|], IL);
+pH = fpminimax(f, half_deg, [|D...|], IH);
+
+print("\n\nLow Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pL[" @ i @ "] = ", coeff(pL, i));
+};
+
+print("\n\nHigh Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pH[" @ i @ "] = ", coeff(pH, i));
+};
+print("\n\n");
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_errL = supnorm(pL, f, IL, absolute, 2^(-30));
+abs_errH = supnorm(pH, f, IH, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical):\n", abs_errL, abs_errH);
+
+rel_errL = supnorm(pL, f, IL, relative, 2^(-30));
+rel_errH = supnorm(pH, f, IH, relative, 2^(-30));
+print("\nMaximum relative error (theoretical):\n", rel_errL, rel_errH);
 
