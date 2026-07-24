@@ -351,7 +351,7 @@ main(int argc, char *argv[])
 #if defined(__AVX512F__) && defined(__AVX512BW__)
 
     ap = COY_START_PROFILE_BLOCK("log-avx512-test");
-    test_log_avx512_avx512();
+    test_log_avx512();
     COY_END_PROFILE(ap);
 
     ap = COY_START_PROFILE_BLOCK("exp-avx512-test");
