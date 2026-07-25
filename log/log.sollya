@@ -1,10 +1,16 @@
 display = hexadecimal!;
 prec = 1024!; 
 
+print("Some constants for range reduction:");
+print("  SQRT2: ", round(sqrt(2.0), D, RN));
+print("SQRT2_2: ", round(sqrt(2.0)/2.0, D, RN));
+print("  LN2_H: ", round(log(2.0), D, RN));
+print("  LN2_L: ", round(log(2.0) - round(log(2.0), D, RN), D, RN));
+
 f = log(1 + x);
 I = [sqrt(2) / 2 - 1; sqrt(2) - 1];
 
-pf = fpminimax(f, [|1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20|], [|D...|], I);
+pf = fpminimax(f, [|1, 2,..., 16|], [|D...|], I);
 
 print("\n\n");
 for i from 0 to degree(pf) do {
@@ -27,7 +33,7 @@ print(" Low Range: ", round(inf(IL), double, RN));
 print(" Mid Range: ", round(inf(IH), double, RN));
 print("High Range: ", round(sup(IH), double, RN));
 
-half_deg = 15;
+half_deg = 12;
 pL = fpminimax(f, [|1, 2,..., half_deg |], [|D...|], IL);
 pH = fpminimax(f, [|1, 2,..., half_deg |], [|D...|], IH);
 
