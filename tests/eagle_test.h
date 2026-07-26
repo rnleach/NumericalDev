@@ -40,6 +40,7 @@ static inline f64 eagle_log1p(f64 x);
 
 static inline __m256d eagle_avx2_exp_pd(__m256d x);
 static inline __m256d eagle_avx2_log_pd(__m256d x);
+static inline __m256d eagle_avx2_log1p_pd(__m256d x);
 
 #endif
 
@@ -52,6 +53,7 @@ static inline __m256d eagle_avx2_log_pd(__m256d x);
 
 static inline __m512d eagle_avx512_exp_pd(__m512d x);
 static inline __m512d eagle_avx512_log_pd(__m512d x);
+static inline __m512d eagle_avx512_log1p_pd(__m512d x);
 
 #endif
 

@@ -148,6 +148,19 @@ profile_log_avx2(f64 *xs, f64 *avx2_vals)
     }
 }
 
+static inline void
+profile_log1p_avx2(f64 *xs, f64 *avx2_vals)
+{
+    for(size i = 0; i < COUNT_TRIALS; i += 4)
+    {
+        __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
+        __m256d evec = eagle_avx2_log1p_pd(xvec);
+        COY_END_PROFILE(ap);
+        _mm256_storeu_pd(&avx2_vals[i], evec);
+    }
+}
+
 #endif
 
 #if ELK_AVX_512
@@ -173,6 +186,19 @@ profile_log_avx512(f64 *xs, f64 *avx512_vals)
         __m512d xvec = _mm512_loadu_pd(&xs[i]);
         CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx512-test");
         __m512d evec = eagle_avx512_log_pd(xvec);
+        COY_END_PROFILE(ap);
+        _mm512_storeu_pd(&avx512_vals[i], evec);
+    }
+}
+
+static inline void
+profile_log1p_avx512(f64 *xs, f64 *avx512_vals)
+{
+    for(size i = 0; i < COUNT_TRIALS; i += 8)
+    {
+        __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
+        __m512d evec = eagle_avx512_log1p_pd(xvec);
         COY_END_PROFILE(ap);
         _mm512_storeu_pd(&avx512_vals[i], evec);
     }
@@ -228,11 +254,11 @@ main(i32 argc, char *argv[])
     profile_log1p_scalar(xs, vals);
 
 #if __AVX2__
-//    profile_log1p_avx2(xs, vals);
+    profile_log1p_avx2(xs, vals);
 #endif
 
 #if ELK_AVX_512
-//    profile_log1p_avx512(xs, vals);
+    profile_log1p_avx512(xs, vals);
 #endif
 
     coy_profile_end();

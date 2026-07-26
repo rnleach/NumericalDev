@@ -1,6 +1,12 @@
 display = hexadecimal!;
 prec = 1024!; 
 
+print("Some constants for range reduction:");
+print("  SQRT2: ", round(sqrt(2.0), D, RN));
+print("SQRT2_2: ", round(sqrt(2.0)/2.0, D, RN));
+print("  LN2_H: ", round(log(2.0), D, RN));
+print("  LN2_L: ", round(log(2.0) - round(log(2.0), D, RN), D, RN));
+
 f = (log(1 + x) - x) / x^2;
 
 I = [sqrt(2) / 2 - 1; sqrt(2) - 1];
@@ -21,4 +27,38 @@ print("\nMaximum absolute error (theoretical) f:\n", abs_err);
 
 rel_err = supnorm(x + x^2 * pf, log(1 + x), I, relative, 2^(-30));
 print("\nMaximum relative error (theoretical) f:\n", rel_err);
+
+// Break it into two polynomials
+mid_way = (inf(I) + (sup(I) - inf(I)) / 2.0) / 8.0;
+IL = [inf(I), mid_way];
+IH = [mid_way, sup(I)];
+
+print("\n\n");
+print(" Low Range: ", round(inf(IL), double, RN));
+print(" Mid Range: ", round(inf(IH), double, RN));
+print("High Range: ", round(sup(IH), double, RN));
+
+half_deg = 13;
+pL = fpminimax(f, half_deg, [|D...|], IL);
+pH = fpminimax(f, half_deg, [|D...|], IH);
+
+print("\n\nLow Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pL[" @ i @ "] = ", coeff(pL, i));
+};
+
+print("\n\nHigh Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pH[" @ i @ "] = ", coeff(pH, i));
+};
+print("\n\n");
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_errL = supnorm(x + x^2 * pL, log(1 + x), IL, absolute, 2^(-30));
+abs_errH = supnorm(x + x^2 * pH, log(1 + x), IH, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical):\n", abs_errL, abs_errH);
+
+rel_errL = supnorm(x + x^2 * pL, log(1 + x), IL, relative, 2^(-30));
+rel_errH = supnorm(x + x^2 * pH, log(1 + x), IH, relative, 2^(-30));
+print("\nMaximum relative error (theoretical):\n", rel_errL, rel_errH);
 
