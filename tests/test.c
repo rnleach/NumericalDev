@@ -545,7 +545,7 @@ main(int argc, char *argv[])
     printf("  log() AVX2 Speed up   = %.2lf\n", (f64)log_scalar_elapsed / (f64)log_avx2_elapsed);
     printf("  log() AVX512 Speed up = %.2lf\n", (f64)log_scalar_elapsed / (f64)log_avx512_elapsed);
     printf("log1p() AVX2 Speed up   = %.2lf\n", (f64)log1p_scalar_elapsed / (f64)log1p_avx2_elapsed);
-    printf("log1p() AVX522 Speed up = %.2lf\n", (f64)log1p_scalar_elapsed / (f64)log1p_avx512_elapsed);
+    printf("log1p() AVX512 Speed up = %.2lf\n", (f64)log1p_scalar_elapsed / (f64)log1p_avx512_elapsed);
 
 #endif
     return EXIT_SUCCESS;
