@@ -5,8 +5,8 @@ eagle_exp(f64 x)
 {
     /* High-precision constants for splitting LN(2) into HI and LO parts */
     f64 const INV_LN2 = +0x1.71547652b82fe0p+0000;
-    f64 const LN2_HI  = +0x1.62e42fefa39ef0p-0001;
-    f64 const LN2_LO  = +0x1.abc9e3b39803f8p-0056;
+    f64 const LN2_HI  = +0x1.62e42fee000000p-0001;
+    f64 const LN2_LO  = +0x1.a39ef35793c760p-0033;
     
     f64 const MAX_EXP   = +0x1.62e42fefa39efp+0009;  /* ~709.78 */
     f64 const MIN_EXP   = -0x1.74910d52d3050p+0009;  /* ~745.13 */
@@ -98,8 +98,8 @@ eagle_avx2_exp_pd(__m256d x)
 {
     /* High-precision constants for splitting LN(2) into HI and LO parts */
     __m256d const INV_LN2 = _mm256_set1_pd(+0x1.71547652b82fe0p+0000);
-    __m256d const LN2_HI  = _mm256_set1_pd(+0x1.62e42fefa39ef0p-0001);
-    __m256d const LN2_LO  = _mm256_set1_pd(+0x1.abc9e3b39803f8p-0056);
+    __m256d const LN2_HI  = _mm256_set1_pd(+0x1.62e42fee000000p-0001);
+    __m256d const LN2_LO  = _mm256_set1_pd(+0x1.a39ef35793c760p-0033);
     
     __m256d const MAX_EXP   = _mm256_set1_pd(+0x1.62e42fefa39efp+0009);  /* ~709.78 */
     __m256d const MIN_EXP   = _mm256_set1_pd(-0x1.74910d52d3050p+0009);  /* ~-745.13 */
@@ -208,9 +208,9 @@ static inline __m512d
 eagle_avx512_exp_pd(__m512d x)
 {
     /* High-precision constants for splitting LN(2) into HI and LO parts */
-    __m512d const INV_LN2 = _mm512_set1_pd(+0x1.71547652b82fep+0000);
-    __m512d const LN2_HI  = _mm512_set1_pd(+0x1.62e42fefa39efp-1);
-    __m512d const LN2_LO  = _mm512_set1_pd(+0x1.abc9e3b39803f8p-56);
+    __m512d const INV_LN2 = _mm512_set1_pd(+0x1.71547652b82fe0p+0000);
+    __m512d const LN2_HI  = _mm512_set1_pd(+0x1.62e42fee000000p-0001);
+    __m512d const LN2_LO  = _mm512_set1_pd(+0x1.a39ef35793c760p-0033);
     
     __m512d const MAX_EXP   = _mm512_set1_pd(+0x1.62e42fefa39efp+0009);  /* ~709.78, exp of larger values overflows.    */
     __m512d const MIN_EXP   = _mm512_set1_pd(-0x1.74910d52d3050p+0009);  /* ~-745.13, exp of smaller values underflows. */
