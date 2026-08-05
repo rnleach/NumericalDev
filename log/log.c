@@ -90,8 +90,8 @@ eagle_log(f64 x)
 
     f64 const sum = z < 0.0 ? suml : sumh;
 
-    f64 const LN2_HI = +0x1.62e42fefa39efp-1;
-    f64 const LN2_LO = +0x1.abc9e3b39803fp-56;
+    f64 const LN2_HI = +0x1.62e42fee000000p-0001;
+    f64 const LN2_LO = +0x1.a39ef35793c760p-0033;
 
     f64 const exp_term_hi = (f64)exponent * LN2_HI;
     f64 const exp_term_lo = (f64)exponent * LN2_LO;
@@ -125,8 +125,8 @@ eagle_avx2_log_pd(__m256d x)
 {
 #define SQRT2   _mm256_set1_pd(+0x1.6a09e667f3bcdp+0000)
 #define SQRT2_2 _mm256_set1_pd(+0x1.6a09e667f3bcdp-0001)
-#define LN2_HI  _mm256_set1_pd(+0x1.62e42fefa39efp-0001)
-#define LN2_LO  _mm256_set1_pd(+0x1.abc9e3b39803f8p-0056)
+#define LN2_HI  _mm256_set1_pd(+0x1.62e42fee000000p-0001)
+#define LN2_LO  _mm256_set1_pd(+0x1.a39ef35793c760p-0033)
 
     __m256d isnan_mask   = _mm256_cmp_pd(x, x, _CMP_NEQ_UQ);
     __m256d const lt_zero_mask = _mm256_cmp_pd(x, _mm256_set1_pd(0.0), _CMP_LT_OQ);
@@ -266,8 +266,8 @@ eagle_avx512_log_pd(__m512d x)
     const __m512d TWO       = _mm512_set1_pd(2.0);
     const __m512d SQRT2     = _mm512_set1_pd(0x1.6a09e667f3bcdp+0);
     const __m512d SQRT2_2   = _mm512_set1_pd(0x1.6a09e667f3bcdp-1);
-    const __m512d LN2_HI    = _mm512_set1_pd(0x1.62e42fefa39efp-1);
-    const __m512d LN2_LO    = _mm512_set1_pd(0x1.abc9e3b39803f8p-56);
+    const __m512d LN2_HI    = _mm512_set1_pd(+0x1.62e42fee000000p-0001);
+    const __m512d LN2_LO    = _mm512_set1_pd(+0x1.a39ef35793c760p-0033);
 
     /* Special cases */
     __mmask8 isnan_mask  = _mm512_cmp_pd_mask(x, x, _CMP_NEQ_UQ);
