@@ -330,14 +330,9 @@ eagle_avx512_expm1_pd(__m512d x)
     __m512i n1 = _mm512_srli_epi64(n_int, 1);
     __m512i n2 = _mm512_sub_epi64(n_int, n1);
 
-    /* Build 2^n1 and 2^n2 directly via bit manipulation */
-    __m512i const biased_n1 = _mm512_slli_epi64(_mm512_add_epi64(n1, _mm512_set1_epi64(1023)), 52);
-    __m512i const biased_n2 = _mm512_slli_epi64(_mm512_add_epi64(n2, _mm512_set1_epi64(1023)), 52);
-    __m512i const biased_n = _mm512_slli_epi64(_mm512_add_epi64(n_int, _mm512_set1_epi64(1023)), 52);
-
-    __m512d twon1 = _mm512_castsi512_pd(biased_n1);
-    __m512d twon2 = _mm512_castsi512_pd(biased_n2);
-    __m512d scale = _mm512_castsi512_pd(biased_n);
+    __m512d twon1 = _mm512_scalef_pd(_mm512_set1_pd(1.0), _mm512_cvtepi64_pd(n1));
+    __m512d twon2 = _mm512_scalef_pd(_mm512_set1_pd(1.0), _mm512_cvtepi64_pd(n2));
+    __m512d scale = _mm512_scalef_pd(_mm512_set1_pd(1.0), _mm512_cvtepi64_pd(n_int));
 
     /* Don't muck up the results by doing uneeded scaling. */
     __mmask8 zero_mask = _mm512_cmpeq_epi64_mask(n_int, _mm512_set1_epi64(0));
