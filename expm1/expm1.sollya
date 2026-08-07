@@ -1,0 +1,65 @@
+display = hexadecimal!;
+prec = 1024!; 
+
+print("Some constants for range reduction:");
+print("INV_LN2: ", round(1.0/log(2), D, RN));
+ln2_h = 0.69314718036912381649;   // For Cody-Waite - need trailing zeros.
+print("  LN2_H: ", round(ln2_h, D, RN));
+print("  LN2_L: ", round(log(2) - round(ln2_h, D, RN), D, RN));
+
+print("\n Overflow Limit: ", round(709.782712893384, D, RN));
+print("Underflow Limit: ", round(-37.42994775023704, D, RN));
+
+f_true = exp(x) - 1;
+f = (exp(x) - 1 - x) / x^2;
+I = [-log(2)/2; log(2)/2];
+
+p = fpminimax(f, 9, [|D...|], I);
+
+print("\n\n");
+for i from 0 to degree(p) do {
+    print("p[" @ i @ "] = ", coeff(p, i));
+};
+print("\n\n");
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_err = supnorm(x + x^2 * p, f_true, I, absolute, 2^(-30));
+print("Maximum absolute error (theoretical):", abs_err);
+
+rel_err = supnorm(x + x^2 * p, f_true, I, relative, 2^(-30));
+print("Maximum relative error (theoretical):", rel_err);
+
+// Break it into two polynomials
+HalfRange = (sup(I) - inf(I)) / 2.0;
+IL = [inf(I), inf(I) + 0.99 * HalfRange];
+IH = [inf(I) + 0.99 * HalfRange, sup(I)];
+
+print("\n\n");
+print(" Low Range: ", round(inf(IL), double, RN));
+print(" Mid Range: ", round(inf(IH), double, RN));
+print("High Range: ", round(sup(IH), double, RN));
+
+half_deg = 9;
+pL = fpminimax(f, half_deg, [|D...|], IL);
+pH = fpminimax(f, half_deg, [|D...|], IH);
+
+print("\n\nLow Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pL[" @ i @ "] = ", coeff(pL, i));
+};
+
+print("\n\nHigh Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pH[" @ i @ "] = ", coeff(pH, i));
+};
+print("\n\n");
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_errL = supnorm(x + x^2 * pL, f_true, IL, absolute, 2^(-30));
+abs_errH = supnorm(x + x^2 * pH, f_true, IH, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical):\n", abs_errL, abs_errH);
+
+rel_errL = supnorm(x + x^2 * pL, f_true, IL, relative, 2^(-30));
+rel_errH = supnorm(x + x^2 * pH, f_true, IH, relative, 2^(-30));
+print("\nMaximum relative error (theoretical):\n", rel_errL, rel_errH);
+

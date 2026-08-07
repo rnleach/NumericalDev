@@ -12,6 +12,7 @@
 
 #include "eagle_test.h"
 #include "../exp/exp.c"
+#include "../expm1/expm1.c"
 #include "../log/log.c"
 #include "../log1p/log1p.c"
 
@@ -54,6 +55,38 @@ test_exp_scalar(void)
     }
 
     printf("  exp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+}
+
+void
+test_expm1_scalar(void)
+{
+    srand(11);
+
+    f64 min = min_exp_arg;
+    f64 max = max_exp_arg;
+
+    i64 count = 0;
+    i64 count1 = 0;
+
+    for(i64 i = 0; i < COUNT_TRIALS; ++i)
+    {
+        f64 x = min + (f64)rand() / RAND_MAX * (max - min);
+        f64 std_math = expm1(x);
+        f64 eagle_math = eagle_expm1(x);
+
+        i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
+        ++count;
+
+        if(diff > 0) { ++count1; }
+
+        if(diff > 1)
+        {
+            printf("scalar input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
+                    x, std_math, eagle_math, diff);
+        }
+    }
+
+    printf("expm1 - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -171,6 +204,49 @@ test_exp_avx2(void)
     }
 
     printf("  exp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+}
+
+void
+test_expm1_avx2(void)
+{
+    srand(11);
+
+    f64 min = min_exp_arg;
+    f64 max = max_exp_arg;
+
+    i64 count = 0;
+    i64 count1 = 0;
+
+    for(i64 i = 0; i < COUNT_TRIALS; i += 4)
+    {
+        Vec256Pun x = {0};
+        Vec256Pun eagle_math = {0};
+        f64 std_math[4] ={0};
+
+        for(i32 j = 0; j < 4; ++j)
+        {
+            x.arr[j] = min + (f64)rand() / RAND_MAX * (max - min);
+            std_math[j] = expm1(x.arr[j]);
+        }
+
+        eagle_math.vec = eagle_avx2_expm1_pd(x.vec);
+
+        for(i32 j = 0; j < 4; ++j)
+        {
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            ++count;
+
+            if(diff > 0) { ++count1; }
+
+            if(diff > 1)
+            {
+                printf("avx2 input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
+                        x.arr[j], std_math[j], eagle_math.arr[j], diff);
+            }
+        }
+    }
+
+    printf("expm1 - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -317,6 +393,51 @@ test_exp_avx512(void)
 }
 
 void
+test_expm1_avx512(void)
+{
+    srand(11);
+
+    f64 min = min_exp_arg;
+    f64 max = max_exp_arg;
+
+    i64 count = 0;
+    i64 count1 = 0;
+
+    for(i64 i = 0; i < COUNT_TRIALS; i += 8)
+    {
+
+        Vec512Pun x = {0};
+        Vec512Pun eagle_math = {0};
+        f64 std_math[8];
+
+        for(i64 j = 0; j < 8; ++j)
+        {
+            f64 val = min + (f64)rand() / RAND_MAX * (max - min);
+            x.arr[j] = val;
+            std_math[j] = expm1(val);
+        }
+
+        eagle_math.vec = eagle_avx512_expm1_pd(x.vec);
+
+        for(i64 j = 0; j < 8; ++j)
+        {
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            ++count;
+
+            if(diff > 0) { ++count1; }
+
+            if(diff > 1)
+            {
+                printf("AVX512 input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
+                        x.arr[j], std_math[j], eagle_math.arr[j], diff);
+            }
+        }
+    }
+
+    printf("expm1 - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+}
+
+void
 test_log_avx512(void)
 {
     srand(11);
@@ -424,6 +545,10 @@ main(int argc, char *argv[])
     test_exp_scalar();
     COY_END_PROFILE(ap);
 
+    ap = COY_START_PROFILE_BLOCK("expm1-scalar-test");
+    test_expm1_scalar();
+    COY_END_PROFILE(ap);
+
 #ifdef __AVX2__
 
     ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
@@ -436,6 +561,10 @@ main(int argc, char *argv[])
 
     ap = COY_START_PROFILE_BLOCK("exp-avx2-test");
     test_exp_avx2();
+    COY_END_PROFILE(ap);
+
+    ap = COY_START_PROFILE_BLOCK("expm1-avx2-test");
+    test_expm1_avx2();
     COY_END_PROFILE(ap);
 
 #endif
@@ -454,6 +583,10 @@ main(int argc, char *argv[])
     test_exp_avx512();
     COY_END_PROFILE(ap);
 
+    ap = COY_START_PROFILE_BLOCK("expm1-avx512-test");
+    test_expm1_avx512();
+    COY_END_PROFILE(ap);
+
 #endif
 
     coy_profile_end();
@@ -466,13 +599,17 @@ main(int argc, char *argv[])
     u64 log_avx2_elapsed = 0;
     u64 log_avx512_elapsed = 0;
 
+    u64 log1p_scalar_elapsed = 0;
+    u64 log1p_avx2_elapsed = 0;
+    u64 log1p_avx512_elapsed = 0;
+
     u64 exp_scalar_elapsed = 0;
     u64 exp_avx2_elapsed = 0;
     u64 exp_avx512_elapsed = 0;
 
-    u64 log1p_scalar_elapsed = 0;
-    u64 log1p_avx2_elapsed = 0;
-    u64 log1p_avx512_elapsed = 0;
+    u64 expm1_scalar_elapsed = 0;
+    u64 expm1_avx2_elapsed = 0;
+    u64 expm1_avx512_elapsed = 0;
 
     for(i32 i = 0; i < COY_PROFILE_NUM_BLOCKS; ++i)
     {
@@ -496,6 +633,11 @@ main(int argc, char *argv[])
                 exp_scalar_elapsed = block->tsc_elapsed_exclusive; 
             }
 
+            if(elk_str_eq(label, (ElkStr){ .start = "expm1-scalar-test", .len = 17}))
+            {
+                expm1_scalar_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
             if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx2-test", .len = 15}))
             {
                 log1p_avx2_elapsed = block->tsc_elapsed_exclusive; 
@@ -511,6 +653,11 @@ main(int argc, char *argv[])
                 exp_avx2_elapsed = block->tsc_elapsed_exclusive; 
             }
 
+            if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx2-test", .len = 15}))
+            {
+                expm1_avx2_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
             if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx512-test", .len = 17}))
             {
                 log1p_avx512_elapsed = block->tsc_elapsed_exclusive; 
@@ -524,6 +671,11 @@ main(int argc, char *argv[])
             if(elk_str_eq(label, (ElkStr){ .start = "exp-avx512-test", .len = 15}))
             {
                 exp_avx512_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx512-test", .len = 17}))
+            {
+                expm1_avx512_elapsed = block->tsc_elapsed_exclusive; 
             }
 
             printf("%-32s Hits: %3"PRIu64" Exclusive: %6.2lf%%", block->label, block->hit_count, block->exclusive_pct);
@@ -542,6 +694,8 @@ main(int argc, char *argv[])
     printf("\n");
     printf("  exp() AVX2 Speed up   = %.2lf\n", (f64)exp_scalar_elapsed / (f64)exp_avx2_elapsed);
     printf("  exp() AVX512 Speed up = %.2lf\n", (f64)exp_scalar_elapsed / (f64)exp_avx512_elapsed);
+    printf("expm1() AVX2 Speed up   = %.2lf\n", (f64)expm1_scalar_elapsed / (f64)expm1_avx2_elapsed);
+    printf("expm1() AVX512 Speed up = %.2lf\n", (f64)expm1_scalar_elapsed / (f64)expm1_avx512_elapsed);
     printf("  log() AVX2 Speed up   = %.2lf\n", (f64)log_scalar_elapsed / (f64)log_avx2_elapsed);
     printf("  log() AVX512 Speed up = %.2lf\n", (f64)log_scalar_elapsed / (f64)log_avx512_elapsed);
     printf("log1p() AVX2 Speed up   = %.2lf\n", (f64)log1p_scalar_elapsed / (f64)log1p_avx2_elapsed);

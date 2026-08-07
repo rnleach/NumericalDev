@@ -28,6 +28,7 @@ static inline i64 f64_ulp_distance(f64 a, f64 b, int64_t max_threshold);
 static inline b32 eagle_isnan_bits(f64 x);
 static inline f64 eagle_nearbyint(f64 x);
 static inline f64 eagle_exp(f64 x);
+static inline f64 eagle_expm1(f64 x);
 static inline f64 eagle_log(f64 x);
 static inline f64 eagle_log1p(f64 x);
 
@@ -39,6 +40,7 @@ static inline f64 eagle_log1p(f64 x);
 #ifdef __AVX2__
 
 static inline __m256d eagle_avx2_exp_pd(__m256d x);
+static inline __m256d eagle_avx2_expm1_pd(__m256d x);
 static inline __m256d eagle_avx2_log_pd(__m256d x);
 static inline __m256d eagle_avx2_log1p_pd(__m256d x);
 
@@ -52,6 +54,7 @@ static inline __m256d eagle_avx2_log1p_pd(__m256d x);
 #if ELK_AVX_512 
 
 static inline __m512d eagle_avx512_exp_pd(__m512d x);
+static inline __m512d eagle_avx512_expm1_pd(__m512d x);
 static inline __m512d eagle_avx512_log_pd(__m512d x);
 static inline __m512d eagle_avx512_log1p_pd(__m512d x);
 
