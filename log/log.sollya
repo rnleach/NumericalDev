@@ -11,7 +11,7 @@ print("  LN2_L: ", round(log(2) - round(ln2_h, D, RN), D, RN));
 f = log(1 + x);
 I = [sqrt(2) / 2 - 1; sqrt(2) - 1];
 
-pf = fpminimax(f, [|1, 2,..., 16|], [|D...|], I);
+pf = fpminimax(f, [|1, 2,..., 22|], [|D...|], I);
 
 print("\n\n");
 for i from 0 to degree(pf) do {
@@ -34,7 +34,7 @@ print(" Low Range: ", round(inf(IL), double, RN));
 print(" Mid Range: ", round(inf(IH), double, RN));
 print("High Range: ", round(sup(IH), double, RN));
 
-half_deg = 12;
+half_deg = 18;
 pL = fpminimax(f, [|1, 2,..., half_deg |], [|D...|], IL);
 pH = fpminimax(f, [|1, 2,..., half_deg |], [|D...|], IH);
 

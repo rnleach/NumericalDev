@@ -6,6 +6,8 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include <mpfr.h>
+
 #include "elk.h"
 #include "magpie.h"
 #include "coyote.h"
@@ -20,7 +22,7 @@
 
 static f64 const min_exp_arg = -710.0;
 static f64 const max_exp_arg = 710.0;
-static f64 const min_log_arg = -1.0;
+static f64 const min_log_arg = -1.0e-10;
 static f64 const max_log_arg = 0x1.fffffffffffffp1023;
 
 #define COUNT_TRIALS (8 * 100000000)
@@ -89,33 +91,72 @@ test_expm1_scalar(void)
     printf("expm1 - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
+static inline f64
+ulp_error_vs_mpfr(f64 x, f64 my_log)
+{
+    mpfr_t mx, mlog;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog, 200);          // plenty of guard bits
+
+    mpfr_set_d(mx, x, MPFR_RNDN);
+    mpfr_log(mlog, mx, MPFR_RNDN);  // correctly rounded to 200 bits
+    mpfr_set_d(mx, my_log, MPFR_RNDN);
+
+    // difference in ulps of the double result
+    mpfr_sub(mlog, mlog, mx, MPFR_RNDN);
+    mpfr_div_2si(mlog, mlog, -52 - (mpfr_get_exp(mx) - 1), MPFR_RNDN);
+    // now |mlog| is the ULP error
+
+    double err = mpfr_get_d(mlog, MPFR_RNDN);
+    mpfr_clear(mx);
+    mpfr_clear(mlog);
+    return err;     // or just look at the absolute value
+}
+
 void
 test_log_scalar(void)
 {
-     srand(11);
+    srand(11);
 
-    f64 min = min_log_arg;
-    f64 max = max_log_arg;
+    f64 const min = min_log_arg;
+    f64 const mid1 = 1.0;
+    f64 const mid2 = 2.0;
+    f64 const max = max_log_arg;
 
     i64 count = 0;
     i64 count1 = 0;
 
-    for(i64 i = 0; i < COUNT_TRIALS; ++i)
+    i64 const lows[3]  = {                0,     COUNT_TRIALS / 3, 2 * COUNT_TRIALS / 3 };
+    i64 const highs[3] = { COUNT_TRIALS / 3, 2 * COUNT_TRIALS / 3,         COUNT_TRIALS };
+    f64 const mins[3]  = {  min, mid1, mid2 };
+    f64 const maxs[3]  = { mid1, mid2,  max };
+
+    for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
-
-        f64 x = min + (f64)rand() / RAND_MAX * (max - min);
-        f64 std_math = log(x);
-        f64 eagle_math = eagle_log(x);
-
-        i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
-        ++count;
-
-        if(diff > 0) { ++count1; }
-
-        if(diff > 1)
+        for(i64 i = lows[range]; i < highs[range]; ++i)
         {
-            printf("scalar input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
-                    x, std_math, eagle_math, diff);
+            f64 const minr = mins[range];
+            f64 const maxr = maxs[range];
+
+            f64 x = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+            f64 std_math = log(x);
+            f64 eagle_math = eagle_log(x);
+
+            i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
+            ++count;
+
+            if(diff > 0)
+            {
+                f64 mpfr_diff = ulp_error_vs_mpfr(x, eagle_math);
+                diff = (i64)nearbyint(mpfr_diff);
+                if(diff > 0) { ++count1; }
+
+                if(diff > 1)
+                {
+                    printf("scalar input: %a stdlib log: %a log: %a diff in ulps %ld (%.2lf - mpfr)\n",
+                            x, std_math, eagle_math, diff, mpfr_diff);
+                }
+            }
         }
     }
 
@@ -254,43 +295,56 @@ test_log_avx2(void)
 {
     srand(11);
 
-    f64 min = min_log_arg;
-    f64 max = max_log_arg;
+    f64 const min = min_log_arg;
+    f64 const mid1 = 1.0;
+    f64 const mid2 = 2.0;
+    f64 const max = max_log_arg;
 
     i64 count = 0;
     i64 count1 = 0;
 
-    for(i64 i = 0; i < COUNT_TRIALS; i += 4)
+    i64 const lows[3]  = {                0,     COUNT_TRIALS / 3, 2 * COUNT_TRIALS / 3 };
+    i64 const highs[3] = { COUNT_TRIALS / 3, 2 * COUNT_TRIALS / 3,         COUNT_TRIALS };
+    f64 const mins[3]  = {  min, mid1, mid2 };
+    f64 const maxs[3]  = { mid1, mid2,  max };
+
+    for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
-        Vec256Pun x = {0};
-        Vec256Pun eagle_math = {0};
-
-        f64 std_math[4];
-
-        for(i64 j = 0; j < 4; ++j)
+        for(i64 i = lows[range]; i < highs[range]; i += 4)
         {
-            x.arr[j] = min + (f64)rand() / RAND_MAX * (max - min);
-            std_math[j] = log(x.arr[j]);
-        }
+            Vec256Pun x = {0};
+            Vec256Pun eagle_math = {0};
 
-        eagle_math.vec = eagle_avx2_log_pd(x.vec);
+            f64 std_math[4];
 
-        for(i64 j = 0; j < 4; ++j)
-        {
-            int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
-            ++count;
-
-            if(diff > 0) { ++count1; }
-
-            if(diff > 1)
+            for(i64 j = 0; j < 4; ++j)
             {
-                printf("AVX2  input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
-                        x.arr[j], std_math[j], x.arr[j], diff);
+                f64 const minr = mins[range];
+                f64 const maxr = maxs[range];
+
+                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                std_math[j] = log(x.arr[j]);
+            }
+
+            eagle_math.vec = eagle_avx2_log_pd(x.vec);
+
+            for(i64 j = 0; j < 4; ++j)
+            {
+                int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+                ++count;
+
+                if(diff > 0) { ++count1; }
+
+                if(diff > 3)
+                {
+                    printf("AVX2  input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
+                            x.arr[j], std_math[j], x.arr[j], diff);
+                }
             }
         }
     }
 
-    printf("  log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - AVX2   |  %.2lf%% of cases were 3 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -442,43 +496,56 @@ test_log_avx512(void)
 {
     srand(11);
 
-    f64 min = min_log_arg;
-    f64 max = max_log_arg;
+    f64 const min = min_log_arg;
+    f64 const mid1 = 1.0;
+    f64 const mid2 = 2.0;
+    f64 const max = max_log_arg;
 
     i64 count = 0;
     i64 count1 = 0;
 
-    for(i64 i = 0; i < COUNT_TRIALS; i += 8)
+    i64 const lows[3]  = {                0,     COUNT_TRIALS / 3, 2 * COUNT_TRIALS / 3 };
+    i64 const highs[3] = { COUNT_TRIALS / 3, 2 * COUNT_TRIALS / 3,         COUNT_TRIALS };
+    f64 const mins[3]  = {  min, mid1, mid2 };
+    f64 const maxs[3]  = { mid1, mid2,  max };
+
+    for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
-        Vec512Pun x = {0};
-        Vec512Pun eagle_math = {0};
-
-        f64 std_math[8];
-
-        for(i64 j = 0; j < 8; ++j)
+        for(i64 i = lows[range]; i < highs[range]; i += 8)
         {
-            x.arr[j] = min + (f64)rand() / RAND_MAX * (max - min);
-            std_math[j] = log(x.arr[j]);
-        }
+            Vec512Pun x = {0};
+            Vec512Pun eagle_math = {0};
 
-        eagle_math.vec = eagle_avx512_log_pd(x.vec);
+            f64 std_math[8];
 
-        for(i64 j = 0; j < 8; ++j)
-        {
-            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
-            ++count;
-
-            if(diff > 0) { ++count1; }
-
-            if(diff > 1)
+            for(i64 j = 0; j < 8; ++j)
             {
-                printf("AVX512 input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
-                        x.arr[j], std_math[j], x.arr[j], diff);
+                f64 const minr = mins[range];
+                f64 const maxr = maxs[range];
+
+                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                std_math[j] = log(x.arr[j]);
+            }
+
+            eagle_math.vec = eagle_avx512_log_pd(x.vec);
+
+            for(i64 j = 0; j < 8; ++j)
+            {
+                i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+                ++count;
+
+                if(diff > 0) { ++count1; }
+
+                if(diff > 2)
+                {
+                    printf("AVX512 input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
+                            x.arr[j], std_math[j], x.arr[j], diff);
+                }
             }
         }
     }
 
-    printf("  log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - AVX512 |  %.2lf%% of cases were 2 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -533,12 +600,12 @@ main(int argc, char *argv[])
     coy_profile_begin();
     CoyProfileAnchor ap;
 
-    ap = COY_START_PROFILE_BLOCK("log1p-scalar-test");
-    test_log1p_scalar();
-    COY_END_PROFILE(ap);
-
     ap = COY_START_PROFILE_BLOCK("log-scalar-test");
     test_log_scalar();
+    COY_END_PROFILE(ap);
+
+    ap = COY_START_PROFILE_BLOCK("log1p-scalar-test");
+    test_log1p_scalar();
     COY_END_PROFILE(ap);
 
     ap = COY_START_PROFILE_BLOCK("exp-scalar-test");

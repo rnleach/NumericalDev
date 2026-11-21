@@ -1,0 +1,59 @@
+display = hexadecimal!;
+prec = 1024!; 
+
+print("Some constants for range reduction:");
+print("  SQRT2: ", round(sqrt(2.0), D, RN));
+print("SQRT2_2: ", round(sqrt(2.0)/2.0, D, RN));
+ln2_h = 0.69314718036912381649;   // For Cody-Waite - need trailing zeros.
+print("  LN2_H: ", round(ln2_h, D, RN));
+print("  LN2_L: ", round(log(2) - round(ln2_h, D, RN), D, RN));
+
+f = log((1 + x) / (1 - x)) / 2;
+I = [(sqrt(2) / 2 - 1) / (sqrt(2) / 2 + 1); (sqrt(2) - 1) / (sqrt(2) + 1)];
+
+pf = fpminimax(f, [|1, 3, 5, 7, 9, 11, 13, 15, 17, 19, 21|], [|D...|], I);
+
+print("\n\n");
+for i from 0 to degree(pf) do {
+    print("pf[" @ i @ "] = ", coeff(pf, i));
+};
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_err = supnorm(pf, f, I, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical) f:\n", abs_err);
+
+rel_err = supnorm(pf, f, I, relative, 2^(-30));
+print("\nMaximum relative error (theoretical) f:\n", rel_err);
+
+// Break it into two polynomials
+IL = [inf(I), 0.0];
+IH = [0.0, sup(I)];
+
+print("\n\n");
+print(" Low Range: ", round(inf(IL), double, RN));
+print(" Mid Range: ", round(inf(IH), double, RN));
+print("High Range: ", round(sup(IH), double, RN));
+
+pL = fpminimax(f, [|1, 3, 5, 7, 9, 11, 13, 15, 17, 19|], [|D...|], IL);
+pH = fpminimax(f, [|1, 3, 5, 7, 9, 11, 13, 15, 17, 19|], [|D...|], IH);
+
+print("\n\nLow Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pL[" @ i @ "] = ", coeff(pL, i));
+};
+
+print("\n\nHigh Range Polynomial:");
+for i from 0 to degree(pL) do {
+    print("pH[" @ i @ "] = ", coeff(pH, i));
+};
+print("\n\n");
+
+// Evaluate the theoretical maximum error of this polynomial
+abs_errL = supnorm(pL, f, IL, absolute, 2^(-30));
+abs_errH = supnorm(pH, f, IH, absolute, 2^(-30));
+print("\nMaximum absolute error (theoretical):\n", abs_errL, abs_errH);
+
+rel_errL = supnorm(pL, f, IL, relative, 2^(-30));
+rel_errH = supnorm(pH, f, IH, relative, 2^(-30));
+print("\nMaximum relative error (theoretical):\n", rel_errL, rel_errH);
+

@@ -26,70 +26,73 @@ eagle_log(f64 x)
 
     /* Map from [1.0, 2.0) to [sqrt(2)/2, sqrt(2))                                                                  */
     f64 s = significand.x;
-    i32 adj = (s >= SQRT2) - (s < SQRT2_2);  /* +1, 0, or -1 */
+    i32 adj = (s >= SQRT2);
     exponent += adj;
-    s *= (adj == 0) ? 1.0 : (adj > 0 ? 0.5 : 2.0);
+    s *= adj ? 0.5 : 1.0;
 
     f64 const z = s - 1.0; 
+    f64 const f = z / (2.0 + z);
+    f64 const f2 = f * f;
 
-    f64 const c00l = 0;
-    f64 const c01l = 0x1.fffffffffff2p-1;
-    f64 const c02l = -0x1.0000000035318p-1;
-    f64 const c03l = 0x1.55555512a818ep-2;
-    f64 const c04l = -0x1.00001050b6c75p-2;
-    f64 const c05l = 0x1.99957db02b90ap-3;
-    f64 const c06l = -0x1.55a3169b319ddp-3;
-    f64 const c07l = 0x1.20f424c1c16a1p-3;
-    f64 const c08l = -0x1.1c12fa8498de7p-3;
-    f64 const c09l = 0x1.52319fa3479e1p-5;
-    f64 const c10l = -0x1.506bd6add6276p-2;
-    f64 const c11l = -0x1.6eb563dcf0e6ep-2;
-    f64 const c12l = -0x1.0b82a6c4bf6f5p-1;
+#if 1
+    f64 const Lg1 = 0x1.5555555555593p-1;
+    f64 const Lg2 = 0x1.999999997fa04p-2;
+    f64 const Lg3 = 0x1.2492494229359p-2;
+    f64 const Lg4 = 0x1.c71c51d8e78afp-3;
+    f64 const Lg5 = 0x1.7466496cb03dep-3;
+    f64 const Lg6 = 0x1.39a09d078c69fp-3;
+    f64 const Lg7 = 0x1.2f112df3e5244p-3;
 
-    f64 const c00h = 0;
-    f64 const c01h = 0x1.ffffffffffefcp-1;
-    f64 const c02h = -0x1.ffffffffa66d2p-2;
-    f64 const c03h = 0x1.5555552c5edacp-2;
-    f64 const c04h = -0x1.fffff144f2d0ap-3;
-    f64 const c05h = 0x1.99983969b5ff6p-3;
-    f64 const c06h = -0x1.5541c7d06ee1dp-3;
-    f64 const c07h = 0x1.23e02d2a040d4p-3;
-    f64 const c08h = -0x1.f783cfbaba881p-4;
-    f64 const c09h = 0x1.a3a33fa2edacdp-4;
-    f64 const c10h = -0x1.32d08b3702861p-4;
-    f64 const c11h = 0x1.49f5e66d51e9fp-5;
-    f64 const c12h = -0x1.7032a2334f732p-7;
+    f64 R = Lg7;
+    R = __builtin_fma(R, f2, Lg6);
+    R = __builtin_fma(R, f2, Lg5);
+    R = __builtin_fma(R, f2, Lg4);
+    R = __builtin_fma(R, f2, Lg3);
+    R = __builtin_fma(R, f2, Lg2);
+    R = __builtin_fma(R, f2, Lg1);
+    R = __builtin_fma(R, f2, 0.0);
 
-    f64 suml = c12l;
-    suml = __builtin_fma(suml, z, c11l);
-    suml = __builtin_fma(suml, z, c10l);
-    suml = __builtin_fma(suml, z, c09l);
-    suml = __builtin_fma(suml, z, c08l);
-    suml = __builtin_fma(suml, z, c07l);
-    suml = __builtin_fma(suml, z, c06l);
-    suml = __builtin_fma(suml, z, c05l);
-    suml = __builtin_fma(suml, z, c04l);
-    suml = __builtin_fma(suml, z, c03l);
-    suml = __builtin_fma(suml, z, c02l);
-    suml = __builtin_fma(suml, z, c01l);
-    suml = __builtin_fma(suml, z, c00l);
+    f64 hfsq = 0.5 * z * z;
 
-    f64 sumh = c12h;
-    sumh = __builtin_fma(sumh, z, c11h);
-    sumh = __builtin_fma(sumh, z, c10h);
-    sumh = __builtin_fma(sumh, z, c09h);
-    sumh = __builtin_fma(sumh, z, c08h);
-    sumh = __builtin_fma(sumh, z, c07h);
-    sumh = __builtin_fma(sumh, z, c06h);
-    sumh = __builtin_fma(sumh, z, c05h);
-    sumh = __builtin_fma(sumh, z, c04h);
-    sumh = __builtin_fma(sumh, z, c03h);
-    sumh = __builtin_fma(sumh, z, c02h);
-    sumh = __builtin_fma(sumh, z, c01h);
-    sumh = __builtin_fma(sumh, z, c00h);
+    f64 sum = z - (hfsq - f * (hfsq + R));
 
-    f64 const sum = z < 0.0 ? suml : sumh;
+#else
 
+    f64 const c00 = 0x1p0;
+    f64 const c01 = 0x1.5555555555555p-2;
+    f64 const c02 = 0x1.9999999999c55p-3;
+    f64 const c03 = 0x1.249249244f36p-3;
+    f64 const c04 = 0x1.c71c7230e787bp-4;
+    f64 const c05 = 0x1.745ce6a68c1e2p-4;
+    f64 const c06 = 0x1.3b2176d9063f3p-4;
+    f64 const c07 = 0x1.0ea0e96466808p-4;
+    f64 const c08 = 0x1.343eb3163f222p-4;
+    f64 const c09 = -0x1.99eda5508ec1cp-3;
+    f64 const c10 = 0x1.b6231556d23e9p0;
+
+    f64 sum = c10;
+    sum = __builtin_fma(sum, f2, c09);
+    sum = __builtin_fma(sum, f2, c08);
+    sum = __builtin_fma(sum, f2, c07);
+    sum = __builtin_fma(sum, f2, c06);
+    sum = __builtin_fma(sum, f2, c05);
+    sum = __builtin_fma(sum, f2, c04);
+    sum = __builtin_fma(sum, f2, c03);
+    sum = __builtin_fma(sum, f2, c02);
+    sum = __builtin_fma(sum, f2, c01);
+    sum = __builtin_fma(sum, f2, c00);
+    sum *= 2.0 * f;
+#endif
+
+#if 1
+    f64 const LN2_HI = 0x1.62e42fefa39efp-1;   // 53 bits
+    f64 const LN2_LO = 0x1.abc9e3b39803fp-56;  // remainder
+
+    f64 const tmp = __builtin_fma((f64)exponent, LN2_HI, sum);
+    f64 const err = __builtin_fma((f64)exponent, LN2_HI, -tmp) + sum;   /* error from first addition */
+    f64 const result = __builtin_fma((f64)exponent, LN2_LO, tmp + err);
+
+#else
     f64 const LN2_HI = +0x1.62e42fee000000p-0001;
     f64 const LN2_LO = +0x1.a39ef35793c760p-0033;
 
@@ -99,6 +102,7 @@ eagle_log(f64 x)
     f64 const tmp = exp_term_hi + sum;
     f64 const err = (exp_term_hi - tmp) + sum;   /* error from first addition */
     f64 const result = tmp + (err + exp_term_lo);
+#endif
 
     return result;
 

@@ -16,7 +16,7 @@ CFLAGS="-Wall -Werror -Wno-unknown-pragmas -Wno-unknown-attributes -Wno-unknown-
 CFLAGS="$CFLAGS -D_DEFAULT_SOURCE"
 CFLAGS="$CFLAGS -I$SRCDIR"
 
-LDLIBS="-lm"
+LDLIBS="-lm -lmpfr -lgmp "
 
 if [ "$#" -gt 0 -a "$1" = "debug" ]
 then
