@@ -4,7 +4,6 @@ static inline f64
 eagle_log(f64 x)
 {
 #define SQRT2   +0x1.6a09e667f3bcdp+0000
-#define SQRT2_2 +0x1.6a09e667f3bcdp-0001
 
     if(eagle_isnan(x) | (x < 0.0)) { return EAGLE_NAN; }
     if(x == 0.0) { return EAGLE_NEG_INF; }
@@ -34,14 +33,13 @@ eagle_log(f64 x)
     f64 const f = z / (2.0 + z);
     f64 const f2 = f * f;
 
-#if 1
-    f64 const Lg1 = 0x1.5555555555593p-1;
-    f64 const Lg2 = 0x1.999999997fa04p-2;
-    f64 const Lg3 = 0x1.2492494229359p-2;
-    f64 const Lg4 = 0x1.c71c51d8e78afp-3;
-    f64 const Lg5 = 0x1.7466496cb03dep-3;
-    f64 const Lg6 = 0x1.39a09d078c69fp-3;
-    f64 const Lg7 = 0x1.2f112df3e5244p-3;
+    f64 const Lg1 = 0x1.5555555555594p-1;
+    f64 const Lg2 = 0x1.999999997f733p-2;
+    f64 const Lg3 = 0x1.249249423bc69p-2;
+    f64 const Lg4 = 0x1.c71c51d5e1a8fp-3;
+    f64 const Lg5 = 0x1.746648289dbfcp-3;
+    f64 const Lg6 = 0x1.39a0e50a4daf7p-3;
+    f64 const Lg7 = 0x1.2f0d0a2a8996cp-3;
 
     f64 R = Lg7;
     R = __builtin_fma(R, f2, Lg6);
@@ -52,62 +50,20 @@ eagle_log(f64 x)
     R = __builtin_fma(R, f2, Lg1);
     R = __builtin_fma(R, f2, 0.0);
 
-    f64 hfsq = 0.5 * z * z;
+    f64 const hfsq = 0.5 * z * z;
 
-    f64 sum = z - (hfsq - f * (hfsq + R));
+    f64 const sum = z - (hfsq - f * (hfsq + R));
 
-#else
-
-    f64 const c00 = 0x1p0;
-    f64 const c01 = 0x1.5555555555555p-2;
-    f64 const c02 = 0x1.9999999999c55p-3;
-    f64 const c03 = 0x1.249249244f36p-3;
-    f64 const c04 = 0x1.c71c7230e787bp-4;
-    f64 const c05 = 0x1.745ce6a68c1e2p-4;
-    f64 const c06 = 0x1.3b2176d9063f3p-4;
-    f64 const c07 = 0x1.0ea0e96466808p-4;
-    f64 const c08 = 0x1.343eb3163f222p-4;
-    f64 const c09 = -0x1.99eda5508ec1cp-3;
-    f64 const c10 = 0x1.b6231556d23e9p0;
-
-    f64 sum = c10;
-    sum = __builtin_fma(sum, f2, c09);
-    sum = __builtin_fma(sum, f2, c08);
-    sum = __builtin_fma(sum, f2, c07);
-    sum = __builtin_fma(sum, f2, c06);
-    sum = __builtin_fma(sum, f2, c05);
-    sum = __builtin_fma(sum, f2, c04);
-    sum = __builtin_fma(sum, f2, c03);
-    sum = __builtin_fma(sum, f2, c02);
-    sum = __builtin_fma(sum, f2, c01);
-    sum = __builtin_fma(sum, f2, c00);
-    sum *= 2.0 * f;
-#endif
-
-#if 1
-    f64 const LN2_HI = 0x1.62e42fefa39efp-1;   // 53 bits
-    f64 const LN2_LO = 0x1.abc9e3b39803fp-56;  // remainder
+    f64 const LN2_HI = 0x1.62e42fefa39efp-1;   /* 53 bits   */
+    f64 const LN2_LO = 0x1.abc9e3b39803fp-56;  /* remainder */
 
     f64 const tmp = __builtin_fma((f64)exponent, LN2_HI, sum);
     f64 const err = __builtin_fma((f64)exponent, LN2_HI, -tmp) + sum;   /* error from first addition */
     f64 const result = __builtin_fma((f64)exponent, LN2_LO, tmp + err);
 
-#else
-    f64 const LN2_HI = +0x1.62e42fee000000p-0001;
-    f64 const LN2_LO = +0x1.a39ef35793c760p-0033;
-
-    f64 const exp_term_hi = (f64)exponent * LN2_HI;
-    f64 const exp_term_lo = (f64)exponent * LN2_LO;
-
-    f64 const tmp = exp_term_hi + sum;
-    f64 const err = (exp_term_hi - tmp) + sum;   /* error from first addition */
-    f64 const result = tmp + (err + exp_term_lo);
-#endif
-
     return result;
 
 #undef SQRT2
-#undef SQRT2_2
 }
 
 #ifdef __AVX2__
@@ -115,132 +71,107 @@ eagle_log(f64 x)
 static inline __m256d
 eagle_convert_epi64_to_pd_avx2(__m256i x)
 {
-    /* Convert signed 64-bit integers to f64. Works because |exponent| is small. */
-    const __m256d bias = _mm256_set1_pd(0x1.0p52);           /* 2^52 */
-    const __m256i magic = _mm256_set1_epi64x(0x4330000000000000LL); /* 2^52 as biased f64 */
+    /* Extract lane 0, 2, 4, 6 (the low 32-bit ints of each 64-bit element) */
+    __m256i idx = _mm256_set_epi32(0, 0, 0, 0, 6, 4, 2, 0);
+    __m128i i32 = _mm256_castsi256_si128(_mm256_permutevar8x32_epi32(x, idx));
+    return _mm256_cvtepi32_pd(i32);
+}
 
-    __m256i biased = _mm256_add_epi64(x, magic);
-    __m256d as_dbl = _mm256_castsi256_pd(biased);
-    return _mm256_sub_pd(as_dbl, bias);
+static inline __m256d
+eagle_negate_avx2(__m256d v)
+{
+    /* Creates a vector of [ -0.0, -0.0, -0.0, -0.0 ] (0x8000000000000000ULL per lane) */
+    __m256d const sign_mask = _mm256_castsi256_pd(_mm256_set1_epi64x((long long)0x8000000000000000ULL));
+    return _mm256_xor_pd(v, sign_mask);
 }
 
 static inline __m256d
 eagle_avx2_log_pd(__m256d x)
 {
-#define SQRT2   _mm256_set1_pd(+0x1.6a09e667f3bcdp+0000)
-#define SQRT2_2 _mm256_set1_pd(+0x1.6a09e667f3bcdp-0001)
-#define LN2_HI  _mm256_set1_pd(+0x1.62e42fee000000p-0001)
-#define LN2_LO  _mm256_set1_pd(+0x1.a39ef35793c760p-0033)
+#define SQRT2      _mm256_set1_pd(+0x1.6a09e667f3bcdp+0000)
+#define LN2_HI     _mm256_set1_pd(+0x1.62e42fefa39efp-0001)
+#define LN2_LO     _mm256_set1_pd(+0x1.abc9e3b39803fp-0056)
+#define SUBNORM_S  _mm256_set1_pd(0x1.0p54)
+#define SUBNORM_E  54LL
 
-    __m256d isnan_mask   = _mm256_cmp_pd(x, x, _CMP_NEQ_UQ);
+    __m256d isnan_mask = _mm256_cmp_pd(x, x, _CMP_NEQ_UQ);
     __m256d const lt_zero_mask = _mm256_cmp_pd(x, _mm256_set1_pd(0.0), _CMP_LT_OQ);
     isnan_mask = _mm256_or_pd(isnan_mask, lt_zero_mask);
 
-    __m256d const posinf_mask  = _mm256_cmp_pd(x, _mm256_set1_pd(EAGLE_POS_INF), _CMP_EQ_OQ);
-    __m256d const zero_mask    = _mm256_cmp_pd(x, _mm256_set1_pd(0.0), _CMP_EQ_OQ);
+    __m256d const posinf_mask = _mm256_cmp_pd(x, _mm256_set1_pd(EAGLE_POS_INF), _CMP_EQ_OQ);
+    __m256d const zero_mask   = _mm256_cmp_pd(x, _mm256_set1_pd(0.0), _CMP_EQ_OQ);
 
-    __m256i pun = _mm256_castpd_si256(x);
+    /* Identify strictly positive subnormals: 0.0 < x < 2^-1022 */
+    __m256d const gt_zero_mask = _mm256_cmp_pd(x, _mm256_set1_pd(0.0), _CMP_GT_OQ);
+    __m256d const lt_min_normal = _mm256_cmp_pd(x, _mm256_set1_pd(0x1.0p-1022), _CMP_LT_OQ);
+    __m256d const subnormal_mask = _mm256_and_pd(gt_zero_mask, lt_min_normal);
+
+    /* Normalize subnormal lanes by 2^54 so they become normal numbers in [2^-1020, 2^-968) */
+    __m256d const x_scaled = _mm256_mul_pd(x, SUBNORM_S);
+    __m256d const x_norm = _mm256_blendv_pd(x, x_scaled, subnormal_mask);
+
+    __m256i const pun = _mm256_castpd_si256(x_norm);
 
     /* Decompose into a number in the range [1.0, 2.0) and the exponent. */
-    __m256i const mantissa = _mm256_and_si256(pun, _mm256_set1_epi64x(0x000FFFFFFFFFFFFFLL));
-    __m256i const raw_exponent = _mm256_and_si256(_mm256_srli_epi64(pun, 52), _mm256_set1_epi64x(0x7FF));
-    __m256i exponent = _mm256_sub_epi64(raw_exponent, _mm256_set1_epi64x(1023));
+    __m256i const mantissa = _mm256_and_si256(pun, _mm256_set1_epi64x((long long)0x000FFFFFFFFFFFFFLL));
+    __m256i const raw_exponent = _mm256_and_si256(_mm256_srli_epi64(pun, 52), _mm256_set1_epi64x(0x7FFLL));
+    __m256i exponent = _mm256_sub_epi64(raw_exponent, _mm256_set1_epi64x(1023LL));
+
+    /* Subtract 54 from exponent on subnormal lanes to compensate for multiplying x by 2^54 */
+    __m256i const exp_adj = _mm256_sub_epi64(exponent, _mm256_set1_epi64x(SUBNORM_E));
+    exponent = _mm256_blendv_epi8(exponent, exp_adj, _mm256_castpd_si256(subnormal_mask));
+
     __m256i const significand_pun = _mm256_or_si256(_mm256_slli_epi64(_mm256_set1_epi64x(1023ULL), 52), mantissa);
-    __m256d significand = _mm256_castsi256_pd(significand_pun);
+    __m256d s = _mm256_castsi256_pd(significand_pun);
 
     /* Map from [1.0, 2.0) to [sqrt(2)/2, sqrt(2)) */
-    __m256d gte_sqrt2_mask = _mm256_cmp_pd(significand, SQRT2, _CMP_GE_OQ);
-    __m256d lt_sqrt2_mask = _mm256_cmp_pd(significand, SQRT2_2, _CMP_LT_OQ);
+    __m256d gte_sqrt2_mask = _mm256_cmp_pd(s, SQRT2, _CMP_GE_OQ);
 
-    __m256d sa = _mm256_mul_pd(significand, _mm256_set1_pd(0.5));
-    __m256d sb = _mm256_mul_pd(significand, _mm256_set1_pd(2.0));
-    __m256i one = _mm256_set1_epi64x(1LL);
-    __m256i ea = _mm256_add_epi64(exponent, one);
-    __m256i eb = _mm256_sub_epi64(exponent, one);
+    __m256d const sa = _mm256_mul_pd(s, _mm256_set1_pd(0.5));
+    __m256i const one = _mm256_set1_epi64x(1LL);
+    __m256i const ea = _mm256_add_epi64(exponent, one);
 
-    significand = _mm256_blendv_pd(significand, sa, gte_sqrt2_mask);
-    significand = _mm256_blendv_pd(significand, sb, lt_sqrt2_mask);
-    significand = _mm256_sub_pd(significand, _mm256_set1_pd(1.0));
+    s = _mm256_blendv_pd(s, sa, gte_sqrt2_mask);
     exponent = _mm256_blendv_epi8(exponent, ea, _mm256_castpd_si256(gte_sqrt2_mask));
-    exponent = _mm256_blendv_epi8(exponent, eb, _mm256_castpd_si256(lt_sqrt2_mask));
 
-    __m256d low_mask = _mm256_cmp_pd(significand, _mm256_set1_pd(0.0), _CMP_LT_OQ);
+    __m256d const z = _mm256_sub_pd(s, _mm256_set1_pd(1.0));
+    __m256d const f = _mm256_div_pd(z, _mm256_add_pd(z, _mm256_set1_pd(2.0)));
+    __m256d const f2 = _mm256_mul_pd(f, f);
 
-    /* Polynomial approximation to log(1 + r) for r < 0 */
-    __m256d const c00l = _mm256_set1_pd(0);
-    __m256d const c01l = _mm256_set1_pd(0x1.fffffffffff2p-1);
-    __m256d const c02l = _mm256_set1_pd(-0x1.0000000035318p-1);
-    __m256d const c03l = _mm256_set1_pd(0x1.55555512a818ep-2);
-    __m256d const c04l = _mm256_set1_pd(-0x1.00001050b6c75p-2);
-    __m256d const c05l = _mm256_set1_pd(0x1.99957db02b90ap-3);
-    __m256d const c06l = _mm256_set1_pd(-0x1.55a3169b319ddp-3);
-    __m256d const c07l = _mm256_set1_pd(0x1.20f424c1c16a1p-3);
-    __m256d const c08l = _mm256_set1_pd(-0x1.1c12fa8498de7p-3);
-    __m256d const c09l = _mm256_set1_pd(0x1.52319fa3479e1p-5);
-    __m256d const c10l = _mm256_set1_pd(-0x1.506bd6add6276p-2);
-    __m256d const c11l = _mm256_set1_pd(-0x1.6eb563dcf0e6ep-2);
-    __m256d const c12l = _mm256_set1_pd(-0x1.0b82a6c4bf6f5p-1);
+    __m256d const Lg1 = _mm256_set1_pd(0x1.5555555555594p-1);
+    __m256d const Lg2 = _mm256_set1_pd(0x1.999999997f733p-2);
+    __m256d const Lg3 = _mm256_set1_pd(0x1.249249423bc69p-2);
+    __m256d const Lg4 = _mm256_set1_pd(0x1.c71c51d5e1a8fp-3);
+    __m256d const Lg5 = _mm256_set1_pd(0x1.746648289dbfcp-3);
+    __m256d const Lg6 = _mm256_set1_pd(0x1.39a0e50a4daf7p-3);
+    __m256d const Lg7 = _mm256_set1_pd(0x1.2f0d0a2a8996cp-3);
 
-    __m256d const c00h = _mm256_set1_pd(0);
-    __m256d const c01h = _mm256_set1_pd(0x1.ffffffffffefcp-1);
-    __m256d const c02h = _mm256_set1_pd(-0x1.ffffffffa66d2p-2);
-    __m256d const c03h = _mm256_set1_pd(0x1.5555552c5edacp-2);
-    __m256d const c04h = _mm256_set1_pd(-0x1.fffff144f2d0ap-3);
-    __m256d const c05h = _mm256_set1_pd(0x1.99983969b5ff6p-3);
-    __m256d const c06h = _mm256_set1_pd(-0x1.5541c7d06ee1dp-3);
-    __m256d const c07h = _mm256_set1_pd(0x1.23e02d2a040d4p-3);
-    __m256d const c08h = _mm256_set1_pd(-0x1.f783cfbaba881p-4);
-    __m256d const c09h = _mm256_set1_pd(0x1.a3a33fa2edacdp-4);
-    __m256d const c10h = _mm256_set1_pd(-0x1.32d08b3702861p-4);
-    __m256d const c11h = _mm256_set1_pd(0x1.49f5e66d51e9fp-5);
-    __m256d const c12h = _mm256_set1_pd(-0x1.7032a2334f732p-7);
+    __m256d R = Lg7;
+    R = _mm256_fmadd_pd(R, f2, Lg6);
+    R = _mm256_fmadd_pd(R, f2, Lg5);
+    R = _mm256_fmadd_pd(R, f2, Lg4);
+    R = _mm256_fmadd_pd(R, f2, Lg3);
+    R = _mm256_fmadd_pd(R, f2, Lg2);
+    R = _mm256_fmadd_pd(R, f2, Lg1);
+    R = _mm256_mul_pd(R, f2);
 
-    __m256d suml = c12l;
-    suml = _mm256_fmadd_pd(suml, significand, c11l);
-    suml = _mm256_fmadd_pd(suml, significand, c10l);
-    suml = _mm256_fmadd_pd(suml, significand, c09l);
-    suml = _mm256_fmadd_pd(suml, significand, c08l);
-    suml = _mm256_fmadd_pd(suml, significand, c07l);
-    suml = _mm256_fmadd_pd(suml, significand, c06l);
-    suml = _mm256_fmadd_pd(suml, significand, c05l);
-    suml = _mm256_fmadd_pd(suml, significand, c04l);
-    suml = _mm256_fmadd_pd(suml, significand, c03l);
-    suml = _mm256_fmadd_pd(suml, significand, c02l);
-    suml = _mm256_fmadd_pd(suml, significand, c01l);
-    suml = _mm256_fmadd_pd(suml, significand, c00l);
+    __m256d const hfsq = _mm256_mul_pd(_mm256_set1_pd(0.5), _mm256_mul_pd(z, z));
+    __m256d const sum = _mm256_sub_pd(z, _mm256_sub_pd(hfsq, _mm256_mul_pd(f, _mm256_add_pd(hfsq, R))));
 
-    __m256d sumh = c12h;
-    sumh = _mm256_fmadd_pd(sumh, significand, c11h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c10h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c09h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c08h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c07h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c06h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c05h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c04h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c03h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c02h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c01h);
-    sumh = _mm256_fmadd_pd(sumh, significand, c00h);
+    __m256d const exponent_pd = eagle_convert_epi64_to_pd_avx2(exponent);
+    __m256d const tmp = _mm256_fmadd_pd(exponent_pd, LN2_HI, sum);
+    __m256d const err = _mm256_add_pd(_mm256_fmadd_pd(exponent_pd, LN2_HI, eagle_negate_avx2(tmp)), sum);
+    __m256d result = _mm256_fmadd_pd(exponent_pd, LN2_LO, _mm256_add_pd(tmp, err));
 
-    __m256d const sum = _mm256_blendv_pd(sumh, suml, low_mask);
+    result = _mm256_blendv_pd(result, _mm256_set1_pd(EAGLE_NAN), isnan_mask);
+    result = _mm256_blendv_pd(result, _mm256_set1_pd(EAGLE_POS_INF), posinf_mask);
+    result = _mm256_blendv_pd(result, _mm256_set1_pd(EAGLE_NEG_INF), zero_mask);
 
-    __m256d const exponent_pd = eagle_convert_epi64_to_pd_avx2(exponent); 
-    __m256d const exp_term_hi = _mm256_mul_pd(exponent_pd, LN2_HI);
-    __m256d const exp_term_lo = _mm256_mul_pd(exponent_pd, LN2_LO);
+    return result;
 
-    __m256d const tmp = _mm256_add_pd(exp_term_hi, sum);
-    __m256d const err = _mm256_add_pd(_mm256_sub_pd(exp_term_hi, tmp), sum);
-    __m256d final = _mm256_add_pd(tmp, _mm256_add_pd(err, exp_term_lo));
-
-    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_NAN), isnan_mask);
-    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_POS_INF), posinf_mask);
-    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_NEG_INF), zero_mask);
-
-    return final;
-
+#undef SUBNORM_E
+#undef SUBNORM_S
 #undef SQRT2
-#undef SQRT2_2
 #undef LN2_HI
 #undef LN2_LO
 }
@@ -261,17 +192,23 @@ eagle_convert_epi64_to_pd_avx512(__m512i x)
     return _mm512_sub_pd(as_dbl, bias);
 }
 
+static inline __m512d eagle_avx512_negate_pd(__m512d v)
+{
+    __m512i sign_mask = _mm512_set1_epi64(0x8000000000000000ULL);
+    __m512i vi = _mm512_castpd_si512(v);
+    return _mm512_castsi512_pd(_mm512_xor_si512(vi, sign_mask));
+}
+
 static inline __m512d
 eagle_avx512_log_pd(__m512d x)
 {
-    const __m512d ZERO      = _mm512_set1_pd(0.0);
-    const __m512d ONE       = _mm512_set1_pd(1.0);
-    const __m512d HALF      = _mm512_set1_pd(0.5);
-    const __m512d TWO       = _mm512_set1_pd(2.0);
-    const __m512d SQRT2     = _mm512_set1_pd(0x1.6a09e667f3bcdp+0);
-    const __m512d SQRT2_2   = _mm512_set1_pd(0x1.6a09e667f3bcdp-1);
-    const __m512d LN2_HI    = _mm512_set1_pd(+0x1.62e42fee000000p-0001);
-    const __m512d LN2_LO    = _mm512_set1_pd(+0x1.a39ef35793c760p-0033);
+    __m512d const ZERO      = _mm512_set1_pd(0.0);
+    __m512d const ONE       = _mm512_set1_pd(1.0);
+    __m512d const HALF      = _mm512_set1_pd(0.5);
+    __m512d const TWO       = _mm512_set1_pd(2.0);
+    __m512d const SQRT2     = _mm512_set1_pd(0x1.6a09e667f3bcdp+0);
+    __m512d const LN2_HI    = _mm512_set1_pd(+0x1.62e42fefa39efp-0001);
+    __m512d const LN2_LO    = _mm512_set1_pd(+0x1.abc9e3b39803fp-0056);
 
     /* Special cases */
     __mmask8 isnan_mask  = _mm512_cmp_pd_mask(x, x, _CMP_NEQ_UQ);
@@ -281,98 +218,48 @@ eagle_avx512_log_pd(__m512d x)
 
     __mmask8 special_mask = isnan_mask | neg_mask | posinf_mask | zero_mask;
 
-    /* === AVX512-native decomposition === */
-    __m512d significand = _mm512_getmant_pd(x,
-                                            _MM_MANT_NORM_1_2,     // [1.0, 2.0)
-                                            _MM_MANT_SIGN_src);    // preserve sign
+    /* AVX512-native decomposition */
+    __m512d s = _mm512_getmant_pd(x, _MM_MANT_NORM_1_2, _MM_MANT_SIGN_src);
 
     __m512i exponent = _mm512_cvtpd_epi64(_mm512_getexp_pd(x));
 
     /* Range reduction: map [1.0, 2.0) → [√2/2, √2) */
-    __mmask8 ge_sqrt2_mask = _mm512_cmp_pd_mask(significand, SQRT2,   _CMP_GE_OQ);
-    __mmask8 lt_s2_2_mask  = _mm512_cmp_pd_mask(significand, SQRT2_2, _CMP_LT_OQ);
+    __mmask8 ge_sqrt2_mask = _mm512_cmp_pd_mask(s, SQRT2,   _CMP_GE_OQ);
 
-    __m512d r = significand;
-
-    r = _mm512_mask_mul_pd(r, ge_sqrt2_mask, r, HALF);
-    r = _mm512_mask_mul_pd(r, lt_s2_2_mask,  r, TWO);
+    s = _mm512_mask_mul_pd(s, ge_sqrt2_mask, s, HALF);
 
     __m512i exp_adj = exponent;
     exp_adj = _mm512_mask_add_epi64(exp_adj, ge_sqrt2_mask, exp_adj, _mm512_set1_epi64(1));
-    exp_adj = _mm512_mask_sub_epi64(exp_adj, lt_s2_2_mask,  exp_adj, _mm512_set1_epi64(1));
 
-    r = _mm512_sub_pd(r, ONE); 
+    __m512d const z = _mm512_sub_pd(s, ONE); 
+    __m512d const f = _mm512_div_pd(z, _mm512_add_pd(z, TWO));
+    __m512d const f2 = _mm512_mul_pd(f, f);
 
-    __mmask8 low_mask = _mm512_cmp_pd_mask(r, _mm512_set1_pd(0.0), _CMP_LT_OQ);
+    __m512d const Lg1 = _mm512_set1_pd(0x1.5555555555594p-1);
+    __m512d const Lg2 = _mm512_set1_pd(0x1.999999997f733p-2);
+    __m512d const Lg3 = _mm512_set1_pd(0x1.249249423bc69p-2);
+    __m512d const Lg4 = _mm512_set1_pd(0x1.c71c51d5e1a8fp-3);
+    __m512d const Lg5 = _mm512_set1_pd(0x1.746648289dbfcp-3);
+    __m512d const Lg6 = _mm512_set1_pd(0x1.39a0e50a4daf7p-3);
+    __m512d const Lg7 = _mm512_set1_pd(0x1.2f0d0a2a8996cp-3);
 
-    /* Polynomial approximation to log(1 + r) for r < 0 */
-    __m512d const c00l = _mm512_set1_pd(0);
-    __m512d const c01l = _mm512_set1_pd(0x1.fffffffffff2p-1);
-    __m512d const c02l = _mm512_set1_pd(-0x1.0000000035318p-1);
-    __m512d const c03l = _mm512_set1_pd(0x1.55555512a818ep-2);
-    __m512d const c04l = _mm512_set1_pd(-0x1.00001050b6c75p-2);
-    __m512d const c05l = _mm512_set1_pd(0x1.99957db02b90ap-3);
-    __m512d const c06l = _mm512_set1_pd(-0x1.55a3169b319ddp-3);
-    __m512d const c07l = _mm512_set1_pd(0x1.20f424c1c16a1p-3);
-    __m512d const c08l = _mm512_set1_pd(-0x1.1c12fa8498de7p-3);
-    __m512d const c09l = _mm512_set1_pd(0x1.52319fa3479e1p-5);
-    __m512d const c10l = _mm512_set1_pd(-0x1.506bd6add6276p-2);
-    __m512d const c11l = _mm512_set1_pd(-0x1.6eb563dcf0e6ep-2);
-    __m512d const c12l = _mm512_set1_pd(-0x1.0b82a6c4bf6f5p-1);
+    __m512d R = Lg7;
+    R = _mm512_fmadd_pd(R, f2, Lg6);
+    R = _mm512_fmadd_pd(R, f2, Lg5);
+    R = _mm512_fmadd_pd(R, f2, Lg4);
+    R = _mm512_fmadd_pd(R, f2, Lg3);
+    R = _mm512_fmadd_pd(R, f2, Lg2);
+    R = _mm512_fmadd_pd(R, f2, Lg1);
+    R = _mm512_mul_pd(R, f2);
 
-    __m512d const c00h = _mm512_set1_pd(0);
-    __m512d const c01h = _mm512_set1_pd(0x1.ffffffffffefcp-1);
-    __m512d const c02h = _mm512_set1_pd(-0x1.ffffffffa66d2p-2);
-    __m512d const c03h = _mm512_set1_pd(0x1.5555552c5edacp-2);
-    __m512d const c04h = _mm512_set1_pd(-0x1.fffff144f2d0ap-3);
-    __m512d const c05h = _mm512_set1_pd(0x1.99983969b5ff6p-3);
-    __m512d const c06h = _mm512_set1_pd(-0x1.5541c7d06ee1dp-3);
-    __m512d const c07h = _mm512_set1_pd(0x1.23e02d2a040d4p-3);
-    __m512d const c08h = _mm512_set1_pd(-0x1.f783cfbaba881p-4);
-    __m512d const c09h = _mm512_set1_pd(0x1.a3a33fa2edacdp-4);
-    __m512d const c10h = _mm512_set1_pd(-0x1.32d08b3702861p-4);
-    __m512d const c11h = _mm512_set1_pd(0x1.49f5e66d51e9fp-5);
-    __m512d const c12h = _mm512_set1_pd(-0x1.7032a2334f732p-7);
-
-    __m512d suml = c12l;
-    suml = _mm512_fmadd_pd(suml, r, c11l);
-    suml = _mm512_fmadd_pd(suml, r, c10l);
-    suml = _mm512_fmadd_pd(suml, r, c09l);
-    suml = _mm512_fmadd_pd(suml, r, c08l);
-    suml = _mm512_fmadd_pd(suml, r, c07l);
-    suml = _mm512_fmadd_pd(suml, r, c06l);
-    suml = _mm512_fmadd_pd(suml, r, c05l);
-    suml = _mm512_fmadd_pd(suml, r, c04l);
-    suml = _mm512_fmadd_pd(suml, r, c03l);
-    suml = _mm512_fmadd_pd(suml, r, c02l);
-    suml = _mm512_fmadd_pd(suml, r, c01l);
-    suml = _mm512_fmadd_pd(suml, r, c00l);
-
-    __m512d sumh = c12h;
-    sumh = _mm512_fmadd_pd(sumh, r, c11h);
-    sumh = _mm512_fmadd_pd(sumh, r, c10h);
-    sumh = _mm512_fmadd_pd(sumh, r, c09h);
-    sumh = _mm512_fmadd_pd(sumh, r, c08h);
-    sumh = _mm512_fmadd_pd(sumh, r, c07h);
-    sumh = _mm512_fmadd_pd(sumh, r, c06h);
-    sumh = _mm512_fmadd_pd(sumh, r, c05h);
-    sumh = _mm512_fmadd_pd(sumh, r, c04h);
-    sumh = _mm512_fmadd_pd(sumh, r, c03h);
-    sumh = _mm512_fmadd_pd(sumh, r, c02h);
-    sumh = _mm512_fmadd_pd(sumh, r, c01h);
-    sumh = _mm512_fmadd_pd(sumh, r, c00h);
-
-    __m512d const p = _mm512_mask_mov_pd(sumh, low_mask, suml);
+    __m512d const hfsq = _mm512_mul_pd(HALF, _mm512_mul_pd(z, z));
+    __m512d const sum = _mm512_sub_pd(z, _mm512_sub_pd(hfsq, _mm512_mul_pd(f, _mm512_add_pd(hfsq, R))));
 
     /* exponent * ln(2) with accurate summation */
-    __m512d exp_pd = _mm512_cvtepi64_pd(exp_adj);
-    __m512d exp_hi = _mm512_mul_pd(exp_pd, LN2_HI);
-    __m512d exp_lo = _mm512_mul_pd(exp_pd, LN2_LO);
-
-    __m512d tmp = _mm512_add_pd(exp_hi, p);
-    __m512d err = _mm512_add_pd(_mm512_sub_pd(exp_hi, tmp), p);
-
-    __m512d result = _mm512_add_pd(tmp, _mm512_add_pd(err, exp_lo));
+    __m512d const exp_pd = _mm512_cvtepi64_pd(exp_adj);
+    __m512d const tmp = _mm512_fmadd_pd(exp_pd, LN2_HI, sum);
+    __m512d const err = _mm512_add_pd(_mm512_fmadd_pd(exp_pd, LN2_HI, eagle_avx512_negate_pd(tmp)), sum);
+    __m512d result = _mm512_fmadd_pd(exp_pd, LN2_LO, _mm512_add_pd(tmp, err));
 
     /* Apply special cases */
     result = _mm512_mask_blend_pd(special_mask, result, _mm512_set1_pd(EAGLE_NAN));

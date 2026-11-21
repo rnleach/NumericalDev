@@ -44,7 +44,7 @@ test_exp_scalar(void)
         f64 std_math = exp(x);
         f64 eagle_math = eagle_exp(x);
 
-        i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
+        i64 diff = f64_ulp_distance(std_math, eagle_math);
         ++count;
 
         if(diff > 0) { ++count1; }
@@ -76,7 +76,7 @@ test_expm1_scalar(void)
         f64 std_math = expm1(x);
         f64 eagle_math = eagle_expm1(x);
 
-        i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
+        i64 diff = f64_ulp_distance(std_math, eagle_math);
         ++count;
 
         if(diff > 0) { ++count1; }
@@ -96,21 +96,21 @@ ulp_error_vs_mpfr(f64 x, f64 my_log)
 {
     mpfr_t mx, mlog;
     mpfr_init2(mx, 53);
-    mpfr_init2(mlog, 200);          // plenty of guard bits
+    mpfr_init2(mlog, 200);
 
     mpfr_set_d(mx, x, MPFR_RNDN);
-    mpfr_log(mlog, mx, MPFR_RNDN);  // correctly rounded to 200 bits
-    mpfr_set_d(mx, my_log, MPFR_RNDN);
+    mpfr_log(mlog, mx, MPFR_RNDN);          /* high-precision true value */
+    mpfr_set_d(mx, my_log, MPFR_RNDN);      /* my result as mpfr         */
+    mpfr_sub(mlog, mlog, mx, MPFR_RNDN);    /* true - my                 */
 
-    // difference in ulps of the double result
-    mpfr_sub(mlog, mlog, mx, MPFR_RNDN);
-    mpfr_div_2si(mlog, mlog, -52 - (mpfr_get_exp(mx) - 1), MPFR_RNDN);
-    // now |mlog| is the ULP error
+    /* Convert absolute difference into ulps of the double result ulp = 2^(mpfr_exp(mx) - 53) */
+    mpfr_mul_2si(mlog, mlog, 53 - mpfr_get_exp(mx), MPFR_RNDN);
 
-    double err = mpfr_get_d(mlog, MPFR_RNDN);
+    f64 err = mpfr_get_d(mlog, MPFR_RNDN);
+
     mpfr_clear(mx);
     mpfr_clear(mlog);
-    return err;     // or just look at the absolute value
+    return err;
 }
 
 void
@@ -142,7 +142,7 @@ test_log_scalar(void)
             f64 std_math = log(x);
             f64 eagle_math = eagle_log(x);
 
-            i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
+            i64 diff = f64_ulp_distance(std_math, eagle_math);
             ++count;
 
             if(diff > 0)
@@ -181,7 +181,7 @@ test_log1p_scalar(void)
         f64 std_math = log1p(x);
         f64 eagle_math = eagle_log1p(x);
 
-        i64 diff = f64_ulp_distance(std_math, eagle_math, 10);
+        i64 diff = f64_ulp_distance(std_math, eagle_math);
         ++count;
 
         if(diff > 0) { ++count1; }
@@ -231,7 +231,7 @@ test_exp_avx2(void)
 
         for(i32 j = 0; j < 4; ++j)
         {
-            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
             ++count;
 
             if(diff > 0) { ++count1; }
@@ -274,7 +274,7 @@ test_expm1_avx2(void)
 
         for(i32 j = 0; j < 4; ++j)
         {
-            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
             ++count;
 
             if(diff > 0) { ++count1; }
@@ -330,21 +330,22 @@ test_log_avx2(void)
 
             for(i64 j = 0; j < 4; ++j)
             {
-                int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+                int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
                 if(diff > 0) { ++count1; }
 
-                if(diff > 3)
+                if(diff > 1)
                 {
+
                     printf("AVX2  input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], x.arr[j], diff);
+                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
                 }
             }
         }
     }
 
-    printf("  log - AVX2   |  %.2lf%% of cases were 3 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -375,7 +376,7 @@ test_log1p_avx2(void)
 
         for(i64 j = 0; j < 4; ++j)
         {
-            int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
             ++count;
 
             if(diff > 0) { ++count1; }
@@ -430,7 +431,7 @@ test_exp_avx512(void)
 
         for(i64 j = 0; j < 8; ++j)
         {
-            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
             ++count;
 
             if(diff > 0) { ++count1; }
@@ -475,7 +476,7 @@ test_expm1_avx512(void)
 
         for(i64 j = 0; j < 8; ++j)
         {
-            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
             ++count;
 
             if(diff > 0) { ++count1; }
@@ -531,12 +532,12 @@ test_log_avx512(void)
 
             for(i64 j = 0; j < 8; ++j)
             {
-                i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+                i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
                 if(diff > 0) { ++count1; }
 
-                if(diff > 2)
+                if(diff > 1)
                 {
                     printf("AVX512 input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
                             x.arr[j], std_math[j], x.arr[j], diff);
@@ -545,7 +546,7 @@ test_log_avx512(void)
         }
     }
 
-    printf("  log - AVX512 |  %.2lf%% of cases were 2 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("  log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -576,7 +577,7 @@ test_log1p_avx512(void)
 
         for(i64 j = 0; j < 8; ++j)
         {
-            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j], 10);
+            i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
             ++count;
 
             if(diff > 0) { ++count1; }
@@ -600,6 +601,7 @@ main(int argc, char *argv[])
     coy_profile_begin();
     CoyProfileAnchor ap;
 
+#if 1
     ap = COY_START_PROFILE_BLOCK("log-scalar-test");
     test_log_scalar();
     COY_END_PROFILE(ap);
@@ -615,15 +617,16 @@ main(int argc, char *argv[])
     ap = COY_START_PROFILE_BLOCK("expm1-scalar-test");
     test_expm1_scalar();
     COY_END_PROFILE(ap);
+#endif
 
-#ifdef __AVX2__
-
-    ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
-    test_log1p_avx2();
-    COY_END_PROFILE(ap);
+#if 1 && defined(__AVX2__ ) 
 
     ap = COY_START_PROFILE_BLOCK("log-avx2-test");
     test_log_avx2();
+    COY_END_PROFILE(ap);
+
+    ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
+    test_log1p_avx2();
     COY_END_PROFILE(ap);
 
     ap = COY_START_PROFILE_BLOCK("exp-avx2-test");
@@ -636,14 +639,14 @@ main(int argc, char *argv[])
 
 #endif
 
-#if defined(__AVX512F__) && defined(__AVX512BW__)
-
-    ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
-    test_log1p_avx512();
-    COY_END_PROFILE(ap);
+#if 1 && defined(__AVX512F__) && defined(__AVX512BW__)
 
     ap = COY_START_PROFILE_BLOCK("log-avx512-test");
     test_log_avx512();
+    COY_END_PROFILE(ap);
+
+    ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
+    test_log1p_avx512();
     COY_END_PROFILE(ap);
 
     ap = COY_START_PROFILE_BLOCK("exp-avx512-test");

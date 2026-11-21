@@ -24,7 +24,7 @@
  *-------------------------------------------------------------------------------------------------------------------------*/
 #define eagle_isnan(x) eagle_isnan_bits(x)
 static inline f64 eagle_nextafter(f64 x, f64 y);
-static inline i64 f64_ulp_distance(f64 a, f64 b, int64_t max_threshold);
+static inline i64 f64_ulp_distance(f64 a, f64 b);
 static inline b32 eagle_isnan_bits(f64 x);
 static inline f64 eagle_nearbyint(f64 x);
 static inline f64 eagle_exp(f64 x);
@@ -100,24 +100,19 @@ eagle_nextafter(f64 x, f64 y)
 }
 
 static inline i64
-f64_ulp_distance(f64 a, f64 b, int64_t max_threshold) 
+f64_ulp_distance(f64 a, f64 b)
 {
+    if (a == b || (eagle_isnan(a) && eagle_isnan(b))) { return 0; }
 
-    /* Handle exact equality (including -0.0 and +0.0, which are 0 ULPs apart) */
-    if (a == b || (eagle_isnan(a) && eagle_isnan(b))) {
-        return 0;
-    }
+    /* Make both numbers positive for the integer view (or handle the sign bit carefully) */
+    union { f64 f; i64 i; } ua = {a}, ub = {b};
 
-    /* Count steps using nextafter */
-    int64_t ulps = 0;
-    f64 current = a;
+    /* Two's-complement ordering of IEEE-754 numbers (this is the standard integer-distance trick) */
+    if (ua.i < 0) { ua.i = 0x8000000000000000LL - ua.i; }
+    if (ub.i < 0) { ub.i = 0x8000000000000000LL - ub.i; }
 
-    while (current != b && ulps <= max_threshold) {
-        current = eagle_nextafter(current, b);
-        ulps++;
-    }
-
-    return ulps;
+    i64 dist = ua.i - ub.i;
+    return dist < 0 ? -dist : dist;
 }
 
 static inline b32 
