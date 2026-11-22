@@ -83,6 +83,7 @@ eagle_exp(f64 x)
     u64 const biased_n1 = (u64)(n1 + 1023) << 52;
     u64 const biased_n2 = (u64)(n2 + 1023) << 52;
     
+    /* TODO: Use a pun instead of a memcpy */
     f64 twon1, twon2;
     __builtin_memcpy(&twon1, &biased_n1, sizeof(f64));
     __builtin_memcpy(&twon2, &biased_n2, sizeof(f64));

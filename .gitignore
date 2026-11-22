@@ -1,5 +1,6 @@
 # Editor files
 *.vim
+.gdb_history
 
 # Test programs
 profile
