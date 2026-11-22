@@ -57,7 +57,7 @@ test_exp_scalar(void)
         }
     }
 
-    printf("     exp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     exp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -89,7 +89,7 @@ test_expm1_scalar(void)
         }
     }
 
-    printf("   expm1 - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   expm1 - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 static inline f64
@@ -161,7 +161,7 @@ test_log_scalar(void)
         }
     }
 
-    printf("     log - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     log - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -194,7 +194,7 @@ test_log1p_scalar(void)
         }
     }
 
-    printf("   log1p - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   log1p - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 static inline f64
@@ -247,7 +247,7 @@ test_log1mexp_scalar(void)
         }
     }
 
-    printf("log1mexp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("log1mexp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 #ifdef __AVX2__ 
@@ -298,7 +298,7 @@ test_exp_avx2(void)
         }
     }
 
-    printf("     exp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     exp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -341,7 +341,7 @@ test_expm1_avx2(void)
         }
     }
 
-    printf("   expm1 - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   expm1 - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -399,7 +399,7 @@ test_log_avx2(void)
         }
     }
 
-    printf("     log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     log - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -443,7 +443,7 @@ test_log1p_avx2(void)
         }
     }
 
-    printf("   log1p - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   log1p - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -487,7 +487,7 @@ test_log1mexp_avx2(void)
         }
     }
 
-    printf("log1mexp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("log1mexp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 #endif
@@ -542,7 +542,7 @@ test_exp_avx512(void)
         }
     }
 
-    printf("     exp - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     exp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -587,7 +587,7 @@ test_expm1_avx512(void)
         }
     }
 
-    printf("   expm1 - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   expm1 - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -644,7 +644,7 @@ test_log_avx512(void)
         }
     }
 
-    printf("     log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     log - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -688,7 +688,7 @@ test_log1p_avx512(void)
         }
     }
 
-    printf("   log1p - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   log1p - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -732,7 +732,7 @@ test_log1mexp_avx512(void)
         }
     }
 
-    printf("log1mexp - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("log1mexp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 #endif

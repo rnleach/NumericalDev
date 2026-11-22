@@ -574,20 +574,20 @@ main(i32 argc, char *argv[])
     printf("log1mexp() AVX2    Elapsed = %13ld\n", log1mexp_avx2_elapsed);
     printf("log1mexp() AVX5122 Elapsed = %13ld\n", log1mexp_avx512_elapsed);
     printf("\n");
-    printf("     exp() Scalar Speed up = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_scalar_elapsed);
-    printf("     exp() AVX2 Speed up   = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx2_elapsed);
-    printf("     exp() AVX512 Speed up = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx512_elapsed);
-    printf("     log() Scalar Speed up = %.2lf\n", (f64)log_std_elapsed / (f64)log_scalar_elapsed);
-    printf("     log() AVX2 Speed up   = %.2lf\n", (f64)log_std_elapsed / (f64)log_avx2_elapsed);
-    printf("     log() AVX512 Speed up = %.2lf\n", (f64)log_std_elapsed / (f64)log_avx512_elapsed);
-    printf("   expm1() Scalar Speed up = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_scalar_elapsed);
-    printf("   expm1() AVX2 Speed up   = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx2_elapsed);
-    printf("   expm1() AVX512 Speed up = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx512_elapsed);
-    printf("   log1p() Scalar Speed up = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_scalar_elapsed);
-    printf("   log1p() AVX2 Speed up   = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx2_elapsed);
-    printf("   log1p() AVX512 Speed up = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx512_elapsed);
-    printf("log1mexp() AVX2 Speed up   = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx2_elapsed);
-    printf("log1mexp() AVX512 Speed up = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx512_elapsed);
+    printf("     exp() Scalar Speed up = %5.2lf\n", (f64)exp_std_elapsed / (f64)exp_scalar_elapsed);
+    printf("     exp() AVX2 Speed up   = %5.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx2_elapsed);
+    printf("     exp() AVX512 Speed up = %5.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx512_elapsed);
+    printf("     log() Scalar Speed up = %5.2lf\n", (f64)log_std_elapsed / (f64)log_scalar_elapsed);
+    printf("     log() AVX2 Speed up   = %5.2lf\n", (f64)log_std_elapsed / (f64)log_avx2_elapsed);
+    printf("     log() AVX512 Speed up = %5.2lf\n", (f64)log_std_elapsed / (f64)log_avx512_elapsed);
+    printf("   expm1() Scalar Speed up = %5.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_scalar_elapsed);
+    printf("   expm1() AVX2 Speed up   = %5.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx2_elapsed);
+    printf("   expm1() AVX512 Speed up = %5.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx512_elapsed);
+    printf("   log1p() Scalar Speed up = %5.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_scalar_elapsed);
+    printf("   log1p() AVX2 Speed up   = %5.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx2_elapsed);
+    printf("   log1p() AVX512 Speed up = %5.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx512_elapsed);
+    printf("log1mexp() AVX2 Speed up   = %5.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx2_elapsed);
+    printf("log1mexp() AVX512 Speed up = %5.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx512_elapsed);
 
 #endif
     return EXIT_SUCCESS;
