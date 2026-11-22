@@ -13,6 +13,7 @@
 #include "../expm1/expm1.c"
 #include "../log/log.c"
 #include "../log1p/log1p.c"
+#include "../log1mexp/log1mexp.c"
 
 #include<immintrin.h>
 
@@ -147,6 +148,19 @@ profile_log1p_scalar(f64 *xs, f64 *scalar_vals)
     }
 }
 
+static inline void
+profile_log1mexp_scalar(f64 *xs, f64 *scalar_vals)
+{
+    for(size i = 0; i < COUNT_TRIALS; ++i)
+    {
+        f64 val = xs[i];
+        CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-scalar-test");
+        f64 lval = eagle_log1mexp(val);
+        COY_END_PROFILE(ap);
+        scalar_vals[i] = lval;
+    }
+}
+
 #if __AVX2__
 
 static inline void
@@ -196,6 +210,19 @@ profile_log1p_avx2(f64 *xs, f64 *avx2_vals)
         __m256d xvec = _mm256_loadu_pd(&xs[i]);
         CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
         __m256d evec = eagle_avx2_log1p_pd(xvec);
+        COY_END_PROFILE(ap);
+        _mm256_storeu_pd(&avx2_vals[i], evec);
+    }
+}
+
+static inline void
+profile_log1mexp_avx2(f64 *xs, f64 *avx2_vals)
+{
+    for(size i = 0; i < COUNT_TRIALS; i += 4)
+    {
+        __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx2-test");
+        __m256d evec = eagle_avx2_log1mexp_pd(xvec);
         COY_END_PROFILE(ap);
         _mm256_storeu_pd(&avx2_vals[i], evec);
     }
@@ -257,6 +284,19 @@ profile_log1p_avx512(f64 *xs, f64 *avx512_vals)
     }
 }
 
+static inline void
+profile_log1mexp_avx512(f64 *xs, f64 *avx512_vals)
+{
+    for(size i = 0; i < COUNT_TRIALS; i += 8)
+    {
+        __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx512-test");
+        __m512d evec = eagle_avx512_log1mexp_pd(xvec);
+        COY_END_PROFILE(ap);
+        _mm512_storeu_pd(&avx512_vals[i], evec);
+    }
+}
+
 #endif
 
 i32
@@ -271,6 +311,9 @@ main(i32 argc, char *argv[])
 
     allocate_buffers_and_fill_xs(min_exp_arg, max_exp_arg, &xs, &vals, alloc);
 
+    /*-----------------------------------------------------------------------------------------------------------------------
+     *                                                   exp tests
+     *---------------------------------------------------------------------------------------------------------------------*/
     profile_exp_std(xs, vals);
     profile_exp_scalar(xs, vals);
 
@@ -282,7 +325,9 @@ main(i32 argc, char *argv[])
     profile_exp_avx512(xs, vals);
 #endif
 
-    /* Reset for the expm1 tests. */
+    /*-----------------------------------------------------------------------------------------------------------------------
+     *                                                  expm1 tests
+     *---------------------------------------------------------------------------------------------------------------------*/
     eco_arena_reset(alloc);
 
     allocate_buffers_and_fill_xs(min_exp_arg, max_exp_arg, &xs, &vals, alloc);
@@ -298,7 +343,9 @@ main(i32 argc, char *argv[])
     profile_expm1_avx512(xs, vals);
 #endif
 
-    /* Reset for the log tests. */
+    /*-----------------------------------------------------------------------------------------------------------------------
+     *                                                 log tests
+     *---------------------------------------------------------------------------------------------------------------------*/
     eco_arena_reset(alloc);
 
     allocate_buffers_and_fill_xs(min_log_arg, max_log_arg, &xs, &vals, alloc);
@@ -314,7 +361,9 @@ main(i32 argc, char *argv[])
     profile_log_avx512(xs, vals);
 #endif
 
-    /* Reset for the log tests. */
+    /*-----------------------------------------------------------------------------------------------------------------------
+     *                                                log1p tests
+     *---------------------------------------------------------------------------------------------------------------------*/
     eco_arena_reset(alloc);
 
     allocate_buffers_and_fill_xs(min_log1p_arg, max_log1p_arg, &xs, &vals, alloc);
@@ -328,6 +377,23 @@ main(i32 argc, char *argv[])
 
 #if ELK_AVX_512
     profile_log1p_avx512(xs, vals);
+#endif
+
+    /*-----------------------------------------------------------------------------------------------------------------------
+     *                                                log1p tests
+     *---------------------------------------------------------------------------------------------------------------------*/
+    eco_arena_reset(alloc);
+
+    allocate_buffers_and_fill_xs(min_log1p_arg, max_log1p_arg, &xs, &vals, alloc);
+
+    profile_log1mexp_scalar(xs, vals);
+
+#if __AVX2__
+    profile_log1mexp_avx2(xs, vals);
+#endif
+
+#if ELK_AVX_512
+    profile_log1mexp_avx512(xs, vals);
 #endif
 
     coy_profile_end();
@@ -356,6 +422,10 @@ main(i32 argc, char *argv[])
     u64 log1p_avx2_elapsed = 0;
     u64 log1p_avx512_elapsed = 0;
 
+    u64 log1mexp_scalar_elapsed = 0;
+    u64 log1mexp_avx2_elapsed = 0;
+    u64 log1mexp_avx512_elapsed = 0;
+
     for(i32 i = 0; i < COY_PROFILE_NUM_BLOCKS; ++i)
     {
         CoyBlockProfiler *block = &coy_global_profiler.blocks[i];
@@ -363,34 +433,11 @@ main(i32 argc, char *argv[])
         {
             ElkStr label = elk_str_from_cstring((char *)block->label);
 
-            if(elk_str_eq(label, (ElkStr){ .start = "log-std-test", .len = 12}))
-            {
-                log_std_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-std-test", .len = 14}))
-            {
-                log1p_std_elapsed = block->tsc_elapsed_exclusive; 
-            }
+            /* --------------- exp tests --------------- */
 
             if(elk_str_eq(label, (ElkStr){ .start = "exp-std-test", .len = 12}))
             {
                 exp_std_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "expm1-std-test", .len = 14}))
-            {
-                expm1_std_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log-scalar-test", .len = 15}))
-            {
-                log_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-scalar-test", .len = 17}))
-            {
-                log1p_scalar_elapsed = block->tsc_elapsed_exclusive; 
             }
 
             if(elk_str_eq(label, (ElkStr){ .start = "exp-scalar-test", .len = 15}))
@@ -398,39 +445,9 @@ main(i32 argc, char *argv[])
                 exp_scalar_elapsed = block->tsc_elapsed_exclusive; 
             }
 
-            if(elk_str_eq(label, (ElkStr){ .start = "expm1-scalar-test", .len = 17}))
-            {
-                expm1_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log-avx2-test", .len = 13}))
-            {
-                log_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx2-test", .len = 15}))
-            {
-                log1p_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
             if(elk_str_eq(label, (ElkStr){ .start = "exp-avx2-test", .len = 13}))
             {
                 exp_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx2-test", .len = 15}))
-            {
-                expm1_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log-avx512-test", .len = 15}))
-            {
-                log_avx512_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx512-test", .len = 17}))
-            {
-                log1p_avx512_elapsed = block->tsc_elapsed_exclusive; 
             }
 
             if(elk_str_eq(label, (ElkStr){ .start = "exp-avx512-test", .len = 15}))
@@ -438,10 +455,90 @@ main(i32 argc, char *argv[])
                 exp_avx512_elapsed = block->tsc_elapsed_exclusive; 
             }
 
+            /* --------------- log tests --------------- */
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log-std-test", .len = 12}))
+            {
+                log_std_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log-scalar-test", .len = 15}))
+            {
+                log_scalar_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log-avx2-test", .len = 13}))
+            {
+                log_avx2_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log-avx512-test", .len = 15}))
+            {
+                log_avx512_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            /* --------------- expm1 tests --------------- */
+
+            if(elk_str_eq(label, (ElkStr){ .start = "expm1-std-test", .len = 14}))
+            {
+                expm1_std_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "expm1-scalar-test", .len = 17}))
+            {
+                expm1_scalar_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx2-test", .len = 15}))
+            {
+                expm1_avx2_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
             if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx512-test", .len = 17}))
             {
                 expm1_avx512_elapsed = block->tsc_elapsed_exclusive; 
             }
+
+            /* --------------- log1p tests --------------- */
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1p-std-test", .len = 14}))
+            {
+                log1p_std_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1p-scalar-test", .len = 17}))
+            {
+                log1p_scalar_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx2-test", .len = 15}))
+            {
+                log1p_avx2_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx512-test", .len = 17}))
+            {
+                log1p_avx512_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            /* --------------- log1mexp tests --------------- */
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-scalar-test", .len = 20}))
+            {
+                log1mexp_scalar_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-avx2-test", .len = 18}))
+            {
+                log1mexp_avx2_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-avx512-test", .len = 20}))
+            {
+                log1mexp_avx512_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
+            /* --------------- end of tests section --------------- */
 
             printf("%-32s Hits: %3"PRIu64" Exclusive: %6.2lf%%", block->label, block->hit_count, block->exclusive_pct);
             
@@ -457,35 +554,40 @@ main(i32 argc, char *argv[])
     }
 
     printf("\n");
-    printf("  exp() Std     Elapsed = %13ld\n", exp_std_elapsed);
-    printf("  exp() Scalar  Elapsed = %13ld\n", exp_scalar_elapsed);
-    printf("  exp() AVX2    Elapsed = %13ld\n", exp_avx2_elapsed);
-    printf("  exp() AVX5122 Elapsed = %13ld\n", exp_avx512_elapsed);
-    printf("  log() Std     Elapsed = %13ld\n", log_std_elapsed);
-    printf("  log() Scalar  Elapsed = %13ld\n", log_scalar_elapsed);
-    printf("  log() AVX2    Elapsed = %13ld\n", log_avx2_elapsed);
-    printf("  log() AVX5122 Elapsed = %13ld\n", log_avx512_elapsed);
-    printf("expm1() Std     Elapsed = %13ld\n", expm1_std_elapsed);
-    printf("expm1() Scalar  Elapsed = %13ld\n", expm1_scalar_elapsed);
-    printf("expm1() AVX2    Elapsed = %13ld\n", expm1_avx2_elapsed);
-    printf("expm1() AVX5122 Elapsed = %13ld\n", expm1_avx512_elapsed);
-    printf("log1p() Std     Elapsed = %13ld\n", log1p_std_elapsed);
-    printf("log1p() Scalar  Elapsed = %13ld\n", log1p_scalar_elapsed);
-    printf("log1p() AVX2    Elapsed = %13ld\n", log1p_avx2_elapsed);
-    printf("log1p() AVX5122 Elapsed = %13ld\n", log1p_avx512_elapsed);
+    printf("     exp() Std     Elapsed = %13ld\n", exp_std_elapsed);
+    printf("     exp() Scalar  Elapsed = %13ld\n", exp_scalar_elapsed);
+    printf("     exp() AVX2    Elapsed = %13ld\n", exp_avx2_elapsed);
+    printf("     exp() AVX5122 Elapsed = %13ld\n", exp_avx512_elapsed);
+    printf("     log() Std     Elapsed = %13ld\n", log_std_elapsed);
+    printf("     log() Scalar  Elapsed = %13ld\n", log_scalar_elapsed);
+    printf("     log() AVX2    Elapsed = %13ld\n", log_avx2_elapsed);
+    printf("     log() AVX5122 Elapsed = %13ld\n", log_avx512_elapsed);
+    printf("   expm1() Std     Elapsed = %13ld\n", expm1_std_elapsed);
+    printf("   expm1() Scalar  Elapsed = %13ld\n", expm1_scalar_elapsed);
+    printf("   expm1() AVX2    Elapsed = %13ld\n", expm1_avx2_elapsed);
+    printf("   expm1() AVX5122 Elapsed = %13ld\n", expm1_avx512_elapsed);
+    printf("   log1p() Std     Elapsed = %13ld\n", log1p_std_elapsed);
+    printf("   log1p() Scalar  Elapsed = %13ld\n", log1p_scalar_elapsed);
+    printf("   log1p() AVX2    Elapsed = %13ld\n", log1p_avx2_elapsed);
+    printf("   log1p() AVX5122 Elapsed = %13ld\n", log1p_avx512_elapsed);
+    printf("log1mexp() Scalar  Elapsed = %13ld\n", log1mexp_scalar_elapsed);
+    printf("log1mexp() AVX2    Elapsed = %13ld\n", log1mexp_avx2_elapsed);
+    printf("log1mexp() AVX5122 Elapsed = %13ld\n", log1mexp_avx512_elapsed);
     printf("\n");
-    printf("  exp() Scalar Speed up = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_scalar_elapsed);
-    printf("  exp() AVX2 Speed up   = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx2_elapsed);
-    printf("  exp() AVX512 Speed up = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx512_elapsed);
-    printf("  log() Scalar Speed up = %.2lf\n", (f64)log_std_elapsed / (f64)log_scalar_elapsed);
-    printf("  log() AVX2 Speed up   = %.2lf\n", (f64)log_std_elapsed / (f64)log_avx2_elapsed);
-    printf("  log() AVX512 Speed up = %.2lf\n", (f64)log_std_elapsed / (f64)log_avx512_elapsed);
-    printf("expm1() Scalar Speed up = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_scalar_elapsed);
-    printf("expm1() AVX2 Speed up   = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx2_elapsed);
-    printf("expm1() AVX512 Speed up = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx512_elapsed);
-    printf("log1p() Scalar Speed up = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_scalar_elapsed);
-    printf("log1p() AVX2 Speed up   = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx2_elapsed);
-    printf("log1p() AVX512 Speed up = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx512_elapsed);
+    printf("     exp() Scalar Speed up = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_scalar_elapsed);
+    printf("     exp() AVX2 Speed up   = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx2_elapsed);
+    printf("     exp() AVX512 Speed up = %.2lf\n", (f64)exp_std_elapsed / (f64)exp_avx512_elapsed);
+    printf("     log() Scalar Speed up = %.2lf\n", (f64)log_std_elapsed / (f64)log_scalar_elapsed);
+    printf("     log() AVX2 Speed up   = %.2lf\n", (f64)log_std_elapsed / (f64)log_avx2_elapsed);
+    printf("     log() AVX512 Speed up = %.2lf\n", (f64)log_std_elapsed / (f64)log_avx512_elapsed);
+    printf("   expm1() Scalar Speed up = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_scalar_elapsed);
+    printf("   expm1() AVX2 Speed up   = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx2_elapsed);
+    printf("   expm1() AVX512 Speed up = %.2lf\n", (f64)expm1_std_elapsed / (f64)expm1_avx512_elapsed);
+    printf("   log1p() Scalar Speed up = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_scalar_elapsed);
+    printf("   log1p() AVX2 Speed up   = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx2_elapsed);
+    printf("   log1p() AVX512 Speed up = %.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx512_elapsed);
+    printf("log1mexp() AVX2 Speed up   = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx2_elapsed);
+    printf("log1mexp() AVX512 Speed up = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx512_elapsed);
 
 #endif
     return EXIT_SUCCESS;
