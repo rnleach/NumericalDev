@@ -57,7 +57,7 @@ test_exp_scalar(void)
         }
     }
 
-    printf("  exp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     exp - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -89,7 +89,7 @@ test_expm1_scalar(void)
         }
     }
 
-    printf("expm1 - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   expm1 - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 static inline f64
@@ -161,7 +161,7 @@ test_log_scalar(void)
         }
     }
 
-    printf("  log - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     log - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -194,7 +194,7 @@ test_log1p_scalar(void)
         }
     }
 
-    printf("log1p - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   log1p - Scalar |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 static inline f64
@@ -298,7 +298,7 @@ test_exp_avx2(void)
         }
     }
 
-    printf("  exp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     exp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -341,7 +341,7 @@ test_expm1_avx2(void)
         }
     }
 
-    printf("expm1 - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   expm1 - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -399,7 +399,7 @@ test_log_avx2(void)
         }
     }
 
-    printf("  log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     log - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -443,22 +443,12 @@ test_log1p_avx2(void)
         }
     }
 
-    printf("log1p - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   log1p - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
 test_log1mexp_avx2(void)
 {
-    __m256d arg = _mm256_set1_pd(0.045870621640565);
-    __m256d res = eagle_avx2_log_pd(arg);
-
-    double out[4];
-    _mm256_storeu_pd(out, res);
-    printf("avx2 log = %.15f\n", out[0]);
-    printf("libm log = %.15f\n", log(0.045870621640565));
-
-    return;
-
     srand(11);
 
     f64 min = 0.0;
@@ -497,7 +487,7 @@ test_log1mexp_avx2(void)
         }
     }
 
-    printf("log1mexp - AVX2|  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("log1mexp - AVX2   |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 #endif
@@ -552,7 +542,7 @@ test_exp_avx512(void)
         }
     }
 
-    printf("  exp - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     exp - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -597,7 +587,7 @@ test_expm1_avx512(void)
         }
     }
 
-    printf("expm1 - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   expm1 - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -654,7 +644,7 @@ test_log_avx512(void)
         }
     }
 
-    printf("  log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("     log - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -698,7 +688,7 @@ test_log1p_avx512(void)
         }
     }
 
-    printf("log1p - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    printf("   log1p - AVX512 |  %.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
 }
 
 void
@@ -802,7 +792,7 @@ main(int argc, char *argv[])
 #if 1 && defined(__AVX512F__) && defined(__AVX512BW__)
 
     ap = COY_START_PROFILE_BLOCK("log1mexp-avx512-test");
-    test_log1mexp_avx512(void)
+    test_log1mexp_avx512();
     COY_END_PROFILE(ap);
 
     ap = COY_START_PROFILE_BLOCK("log-avx512-test");

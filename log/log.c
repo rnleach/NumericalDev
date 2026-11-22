@@ -78,10 +78,10 @@ eagle_convert_epi64_to_pd_avx2(__m256i x)
 }
 
 static inline __m256d
-eagle_negate_avx2(__m256d v)
+eagle_avx2_negate_pd(__m256d v)
 {
     /* Creates a vector of [ -0.0, -0.0, -0.0, -0.0 ] (0x8000000000000000ULL per lane) */
-    __m256d const sign_mask = _mm256_castsi256_pd(_mm256_set1_epi64x((long long)0x8000000000000000ULL));
+    __m256d const sign_mask = _mm256_castsi256_pd(_mm256_set1_epi64x(0x8000000000000000ULL));
     return _mm256_xor_pd(v, sign_mask);
 }
 
@@ -160,7 +160,7 @@ eagle_avx2_log_pd(__m256d x)
 
     __m256d const exponent_pd = eagle_convert_epi64_to_pd_avx2(exponent);
     __m256d const tmp = _mm256_fmadd_pd(exponent_pd, LN2_HI, sum);
-    __m256d const err = _mm256_add_pd(_mm256_fmadd_pd(exponent_pd, LN2_HI, eagle_negate_avx2(tmp)), sum);
+    __m256d const err = _mm256_add_pd(_mm256_fmadd_pd(exponent_pd, LN2_HI, eagle_avx2_negate_pd(tmp)), sum);
     __m256d result = _mm256_fmadd_pd(exponent_pd, LN2_LO, _mm256_add_pd(tmp, err));
 
     result = _mm256_blendv_pd(result, _mm256_set1_pd(EAGLE_NAN), isnan_mask);
