@@ -5,6 +5,7 @@
 #include <stddef.h>
 
 #include <immintrin.h>
+
 #include "elk.h"
 
 /*---------------------------------------------------------------------------------------------------------------------------
@@ -16,6 +17,8 @@
 #define EAGLE_POS_INF __builtin_inf()
 #define EAGLE_NEG_INF (-__builtin_inf())
 #define EAGLE_NAN     __builtin_nan("")
+#define EAGLE_SUBNORM_MIN (0x0.0000000000001p-1022)
+#define EAGLE_SUBNORM_MAX (0x0.fffffffffffffp-1022)
 
 /*---------------------------------------------------------------------------------------------------------------------------
  *
@@ -27,6 +30,7 @@ static inline f64 eagle_nextafter(f64 x, f64 y);
 static inline i64 f64_ulp_distance(f64 a, f64 b);
 static inline b32 eagle_isnan_bits(f64 x);
 static inline f64 eagle_nearbyint(f64 x);
+
 static inline f64 eagle_exp(f64 x);
 static inline f64 eagle_expm1(f64 x);
 static inline f64 eagle_log(f64 x);
