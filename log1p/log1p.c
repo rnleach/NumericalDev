@@ -48,7 +48,6 @@ eagle_log1p(f64 x)
         suml = __builtin_fma(suml, x, c12l);
         suml = __builtin_fma(suml, x, c11l);
         suml = __builtin_fma(suml, x, c10l);
-        suml = __builtin_fma(suml, x, c00l);
         suml = __builtin_fma(suml, x, c09l);
         suml = __builtin_fma(suml, x, c08l);
         suml = __builtin_fma(suml, x, c07l);
@@ -58,12 +57,12 @@ eagle_log1p(f64 x)
         suml = __builtin_fma(suml, x, c03l);
         suml = __builtin_fma(suml, x, c02l);
         suml = __builtin_fma(suml, x, c01l);
+        suml = __builtin_fma(suml, x, c00l);
 
         f64 sumh = c13h;
         sumh = __builtin_fma(sumh, x, c12h);
         sumh = __builtin_fma(sumh, x, c11h);
         sumh = __builtin_fma(sumh, x, c10h);
-        sumh = __builtin_fma(sumh, x, c00h);
         sumh = __builtin_fma(sumh, x, c09h);
         sumh = __builtin_fma(sumh, x, c08h);
         sumh = __builtin_fma(sumh, x, c07h);
@@ -73,6 +72,7 @@ eagle_log1p(f64 x)
         sumh = __builtin_fma(sumh, x, c03h);
         sumh = __builtin_fma(sumh, x, c02h);
         sumh = __builtin_fma(sumh, x, c01h);
+        sumh = __builtin_fma(sumh, x, c00h);
 
         f64 const break_point = 0x1.f0ed99bed9b2ep-8;
 
@@ -80,14 +80,8 @@ eagle_log1p(f64 x)
 
         return x + x * x * sum; 
     }
-    else
-    {
-        volatile f64 u = 1.0 + x;
-        volatile f64 d = u - 1.0;
-    
-        f64 safe_d = (d == 0.0) ? 1.0 : d; 
-        return eagle_log(u) * (x / safe_d);
-    }
+
+    else { return eagle_log(1.0 + x); }
 }
 
 #ifdef __AVX2__
@@ -147,7 +141,6 @@ eagle_avx2_log1p_pd(__m256d x)
         suml = _mm256_fmadd_pd(suml, x, c12l);
         suml = _mm256_fmadd_pd(suml, x, c11l);
         suml = _mm256_fmadd_pd(suml, x, c10l);
-        suml = _mm256_fmadd_pd(suml, x, c00l);
         suml = _mm256_fmadd_pd(suml, x, c09l);
         suml = _mm256_fmadd_pd(suml, x, c08l);
         suml = _mm256_fmadd_pd(suml, x, c07l);
@@ -157,12 +150,12 @@ eagle_avx2_log1p_pd(__m256d x)
         suml = _mm256_fmadd_pd(suml, x, c03l);
         suml = _mm256_fmadd_pd(suml, x, c02l);
         suml = _mm256_fmadd_pd(suml, x, c01l);
+        suml = _mm256_fmadd_pd(suml, x, c00l);
 
         __m256d sumh = c13h;
         sumh = _mm256_fmadd_pd(sumh, x, c12h);
         sumh = _mm256_fmadd_pd(sumh, x, c11h);
         sumh = _mm256_fmadd_pd(sumh, x, c10h);
-        sumh = _mm256_fmadd_pd(sumh, x, c00h);
         sumh = _mm256_fmadd_pd(sumh, x, c09h);
         sumh = _mm256_fmadd_pd(sumh, x, c08h);
         sumh = _mm256_fmadd_pd(sumh, x, c07h);
@@ -172,6 +165,7 @@ eagle_avx2_log1p_pd(__m256d x)
         sumh = _mm256_fmadd_pd(sumh, x, c03h);
         sumh = _mm256_fmadd_pd(sumh, x, c02h);
         sumh = _mm256_fmadd_pd(sumh, x, c01h);
+        sumh = _mm256_fmadd_pd(sumh, x, c00h);
 
         __m256d sum = _mm256_blendv_pd(sumh, suml, break_mask);
         small_x_result = _mm256_add_pd(x, _mm256_mul_pd(_mm256_mul_pd(x, x), sum));
@@ -255,7 +249,6 @@ eagle_avx512_log1p_pd(__m512d x)
         suml = _mm512_fmadd_pd(suml, x, c12l);
         suml = _mm512_fmadd_pd(suml, x, c11l);
         suml = _mm512_fmadd_pd(suml, x, c10l);
-        suml = _mm512_fmadd_pd(suml, x, c00l);
         suml = _mm512_fmadd_pd(suml, x, c09l);
         suml = _mm512_fmadd_pd(suml, x, c08l);
         suml = _mm512_fmadd_pd(suml, x, c07l);
@@ -265,12 +258,12 @@ eagle_avx512_log1p_pd(__m512d x)
         suml = _mm512_fmadd_pd(suml, x, c03l);
         suml = _mm512_fmadd_pd(suml, x, c02l);
         suml = _mm512_fmadd_pd(suml, x, c01l);
+        suml = _mm512_fmadd_pd(suml, x, c00l);
 
         __m512d sumh = c13h;
         sumh = _mm512_fmadd_pd(sumh, x, c12h);
         sumh = _mm512_fmadd_pd(sumh, x, c11h);
         sumh = _mm512_fmadd_pd(sumh, x, c10h);
-        sumh = _mm512_fmadd_pd(sumh, x, c00h);
         sumh = _mm512_fmadd_pd(sumh, x, c09h);
         sumh = _mm512_fmadd_pd(sumh, x, c08h);
         sumh = _mm512_fmadd_pd(sumh, x, c07h);
@@ -280,6 +273,7 @@ eagle_avx512_log1p_pd(__m512d x)
         sumh = _mm512_fmadd_pd(sumh, x, c03h);
         sumh = _mm512_fmadd_pd(sumh, x, c02h);
         sumh = _mm512_fmadd_pd(sumh, x, c01h);
+        sumh = _mm512_fmadd_pd(sumh, x, c00h);
 
         __m512d sum = _mm512_mask_blend_pd(break_mask, sumh, suml);
         small_x_result = _mm512_add_pd(x, _mm512_mul_pd(_mm512_mul_pd(x, x), sum));
