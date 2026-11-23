@@ -10,7 +10,7 @@ echo "--------------------------------------------------------------------------
 echo "                                            ********** Build Test **********"
 echo
 
-CC=gcc
+CC=clang
 
 CFLAGS="-Wall -Werror -Wno-unknown-pragmas -Wno-unknown-attributes -Wno-unknown-warning-option -march=native -fPIC -std=c17"
 CFLAGS="$CFLAGS -D_DEFAULT_SOURCE"
@@ -42,7 +42,7 @@ then
     echo "build test"
     $CC $CFLAGS $SRCDIR/test.c -o test $LDLIBS
     echo "build profile"
-    $CC $CFLAGS $SRCDIR/profile.c -o profile $LDLIBS
+    $CC $CFLAGS -fno-vectorize -fno-slp-vectorize $SRCDIR/profile.c -o profile $LDLIBS
 
     if [ "$#" -gt 1 -a "$2" = 'test' ]
     then
@@ -56,7 +56,7 @@ then
     echo "build test"
     $CC $CFLAGS $SRCDIR/test.c -o test $LDLIBS
     echo "build profile"
-    $CC $CFLAGS $SRCDIR/profile.c -o profile $LDLIBS && echo && echo "run test" && echo && echo && ./test && echo && ./profile
+    $CC $CFLAGS -fno-vectorize -fno-slp-vectorize $SRCDIR/profile.c -o profile $LDLIBS && echo && echo "run test" && echo && echo && ./test && echo && ./profile
 fi
 
 if [ "$#" -gt 0 -a "$1" = "prof" ]
