@@ -97,6 +97,19 @@ profile_log1p_std(f64 *xs, f64 *std_vals)
 }
 
 static inline void
+profile_log1mexp_std(f64 *xs, f64 *std_vals)
+{
+    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-std-test");
+    for(size i = 0; i < COUNT_TRIALS; ++i)
+    {
+        f64 val = xs[i];
+        f64 lval = test_std_log1mexp(val);
+        std_vals[i] = lval;
+    }
+    COY_END_PROFILE(ap);
+}
+
+static inline void
 profile_exp_scalar(f64 *xs, f64 *scalar_vals)
 {
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-scalar-test");
@@ -386,6 +399,7 @@ main(i32 argc, char *argv[])
 
     allocate_buffers_and_fill_xs(min_log1p_arg, max_log1p_arg, &xs, &vals, alloc);
 
+    profile_log1mexp_std(xs, vals);
     profile_log1mexp_scalar(xs, vals);
 
 #if __AVX2__
@@ -422,6 +436,7 @@ main(i32 argc, char *argv[])
     u64 log1p_avx2_elapsed = 0;
     u64 log1p_avx512_elapsed = 0;
 
+    u64 log1mexp_std_elapsed = 0;
     u64 log1mexp_scalar_elapsed = 0;
     u64 log1mexp_avx2_elapsed = 0;
     u64 log1mexp_avx512_elapsed = 0;
@@ -523,6 +538,11 @@ main(i32 argc, char *argv[])
 
             /* --------------- log1mexp tests --------------- */
 
+            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-std-test", .len = 17}))
+            {
+                log1mexp_std_elapsed = block->tsc_elapsed_exclusive; 
+            }
+
             if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-scalar-test", .len = 20}))
             {
                 log1mexp_scalar_elapsed = block->tsc_elapsed_exclusive; 
@@ -586,8 +606,9 @@ main(i32 argc, char *argv[])
     printf("   log1p() Scalar Speed up = %5.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_scalar_elapsed);
     printf("   log1p() AVX2 Speed up   = %5.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx2_elapsed);
     printf("   log1p() AVX512 Speed up = %5.2lf\n", (f64)log1p_std_elapsed / (f64)log1p_avx512_elapsed);
-    printf("log1mexp() AVX2 Speed up   = %5.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx2_elapsed);
-    printf("log1mexp() AVX512 Speed up = %5.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx512_elapsed);
+    printf("log1mexp() Scalar Speed up = %5.2lf\n", (f64)log1mexp_std_elapsed / (f64)log1mexp_scalar_elapsed);
+    printf("log1mexp() AVX2 Speed up   = %5.2lf\n", (f64)log1mexp_std_elapsed / (f64)log1mexp_avx2_elapsed);
+    printf("log1mexp() AVX512 Speed up = %5.2lf\n", (f64)log1mexp_std_elapsed / (f64)log1mexp_avx512_elapsed);
 
 #endif
     return EXIT_SUCCESS;

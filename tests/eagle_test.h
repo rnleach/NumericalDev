@@ -69,6 +69,13 @@ static inline __m512d eagle_avx512_log1mexp_pd(__m512d x);
 
 /*---------------------------------------------------------------------------------------------------------------------------
  *
+ *                                                       Test Only
+ *
+ *-------------------------------------------------------------------------------------------------------------------------*/
+static inline f64 test_std_log1mexp(f64 x);
+
+/*---------------------------------------------------------------------------------------------------------------------------
+ *
  *                                                    Implementations
  *
  *-------------------------------------------------------------------------------------------------------------------------*/
@@ -153,6 +160,27 @@ eagle_nearbyint(f64 x)
     /* If x is already larger than 2^52, it has no fractional part, 
        or it is already an Inf/NaN. Return it unmodified. */
     return x;
+}
+
+static inline f64
+test_std_log1mexp(f64 x)
+{
+
+    if(eagle_isnan(x) | (x < 0.0)) { return EAGLE_NAN; }
+    if(x == 0.0) { return EAGLE_NEG_INF; }
+    if(x == EAGLE_POS_INF) { return 0.0; }
+
+    f64 const ln2 = 0x1.62e42fefa39efp-1;   /* ln(2) */
+
+    if(x <= ln2)
+    {
+        f64 const y = x < 0x1p-52 ? x : -expm1(-x);
+        return log(y);
+    }
+    else
+    {
+        return log1p(-exp(-x));
+    }
 }
 
 #endif
