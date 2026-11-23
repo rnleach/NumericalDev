@@ -14,7 +14,8 @@ eagle_log1mexp(f64 x)
 
     if(x <= ln2)
     {
-        return eagle_log(-eagle_expm1(-x));
+        f64 const y = x < 0x1p-52 ? x : -eagle_expm1(-x);
+        return eagle_log(y);
     }
     else
     {
@@ -40,14 +41,17 @@ eagle_avx2_log1mexp_pd(__m256d x)
     */
 
     __m256d const ln2 = _mm256_set1_pd(0x1.62e42fefa39efp-1);
+    __m256d const tiny = _mm256_set1_pd(0x1p-52);
     __m256d const neg_x = eagle_avx2_negate_pd(x);
     
     /* Handle small x */
     __m256d const small_mask = _mm256_cmp_pd(x, ln2, _CMP_LE_OQ);
+    __m256d const tiny_mask = _mm256_cmp_pd(x, tiny, _CMP_LT_OQ);
     __m256d small_x_result;
     {
         __m256d y1 = eagle_avx2_expm1_pd(neg_x);
         y1 = eagle_avx2_negate_pd(y1);
+        y1 = _mm256_blendv_pd(y1, x, tiny_mask);
         small_x_result = eagle_avx2_log_pd(y1);
     }
 
@@ -92,14 +96,17 @@ eagle_avx512_log1mexp_pd(__m512d x)
     */
 
     __m512d const ln2 = _mm512_set1_pd(0x1.62e42fefa39efp-1);
+    __m512d const tiny = _mm512_set1_pd(0x1p-52);
     __m512d const neg_x = eagle_avx512_negate_pd(x);
 
     /* Handle small x */
     __mmask8 const small_mask = _mm512_cmp_pd_mask(x, ln2, _CMP_LE_OQ);
+    __mmask8 const tiny_mask = _mm512_cmp_pd_mask(x, tiny, _CMP_LT_OQ);
     __m512d small_x_result;
     {
         __m512d y = eagle_avx512_expm1_pd(neg_x);
         y = eagle_avx512_negate_pd(y);
+        y = _mm512_mask_blend_pd(tiny_mask, y, x);
         small_x_result = eagle_avx512_log_pd(y);
     }
 
