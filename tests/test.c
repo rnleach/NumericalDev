@@ -315,31 +315,36 @@ test_log1p_scalar(void)
 }
 
 static inline f64
-ulp_error_vs_mpfr_log1mexp(f64 x, f64 my_log1mexp)
+ulp_error_vs_mpfr_log1mexp(double x, double my_log1mexp)
 {
-    mpfr_t mx, neg_mx, mlog1mexp;
+    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diff;
     mpfr_init2(mx, 53);
-    mpfr_init2(neg_mx, 53);
-    mpfr_init2(mlog1mexp, 200);
+    mpfr_init2(neg_x, 256);
+    mpfr_init2(one_minus_exp, 256);
+    mpfr_init2(truth, 256);
+    mpfr_init2(mine, 53);
+    mpfr_init2(diff, 256);
 
     mpfr_set_d(mx, x, MPFR_RNDN);
+    mpfr_neg(neg_x, mx, MPFR_RNDN);
+    /* 1 - exp(-x) = -expm1(-x) */
+    mpfr_expm1(one_minus_exp, neg_x, MPFR_RNDN);
+    mpfr_neg(one_minus_exp, one_minus_exp, MPFR_RNDN);
+    mpfr_log(truth, one_minus_exp, MPFR_RNDN);
 
-    mpfr_neg(neg_mx, mx, MPFR_RNDN);
-    mpfr_exp(mlog1mexp, neg_mx, MPFR_RNDN);
-    mpfr_neg(mlog1mexp, mlog1mexp, MPFR_RNDN);
-    mpfr_log1p(mlog1mexp, mx, MPFR_RNDN);             /* high-precision true value */
+    mpfr_set_d(mine, my_log1mexp, MPFR_RNDN);
+    mpfr_sub(diff, truth, mine, MPFR_RNDN);
 
-    mpfr_set_d(mx, my_log1mexp, MPFR_RNDN);           /* my result as mpfr         */
-    mpfr_sub(mlog1mexp, mlog1mexp, mx, MPFR_RNDN);    /* true - my                 */
+    mpfr_exp_t exp2 = mpfr_zero_p(mine) ? -1022 : mpfr_get_exp(mine);
+    if(exp2 < -1021)
+    {
+        exp2 = -1021; /* subnormal binary64 ULP is 2^-1074 = 2^(-53 - (-1021)) */
+    }
+    mpfr_mul_2si(diff, diff, 53 - exp2, MPFR_RNDN);
 
-    /* Convert absolute difference into ulps of the double result ulp = 2^(mpfr_exp(mx) - 53) */
-    mpfr_mul_2si(mlog1mexp, mlog1mexp, 53 - mpfr_get_exp(mx), MPFR_RNDN);
+    f64 err = mpfr_get_d(diff, MPFR_RNDN);
 
-    f64 err = mpfr_get_d(mlog1mexp, MPFR_RNDN);
-
-    mpfr_clear(mx);
-    mpfr_clear(neg_mx);
-    mpfr_clear(mlog1mexp);
+    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diff, (mpfr_ptr)0);
     return err;
 }
 
@@ -790,12 +795,17 @@ test_log1mexp_avx2(void)
                 int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0) 
                 {
-                    fprintf(stderr, "AVX2  input: %a scalar log1mexp: %a custom log1mexp: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j]);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "AVX2  input: %a scalar log1mexp: %a custom log1mexp: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
@@ -1191,12 +1201,17 @@ test_log1mexp_avx512(void)
                 i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0) 
                 {
-                    fprintf(stderr, "AVX512 input: %a scalar log1mexp: %a custom log1mexp: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j]);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "AVX512  input: %a scalar log1mexp: %a custom log1mexp: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
