@@ -57,7 +57,6 @@ test_exp_scalar(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -81,8 +80,6 @@ test_exp_scalar(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     fprintf(stdout, "     exp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -136,7 +133,6 @@ test_log_scalar(void)
     mpfr_init2(mx, 53);
     mpfr_init2(mlog, 200);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -165,8 +161,6 @@ test_log_scalar(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Clean up memory for mpfr */
     mpfr_clear(mx);
@@ -203,7 +197,6 @@ test_expm1_scalar(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -227,8 +220,6 @@ test_expm1_scalar(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     fprintf(stdout, "   expm1 - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -282,7 +273,6 @@ test_log1p_scalar(void)
     mpfr_init2(mx, 53);
     mpfr_init2(mlog1p, 200);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -311,8 +301,6 @@ test_log1p_scalar(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Free up mpfr memory */
     mpfr_clear(mx);
@@ -381,7 +369,6 @@ test_log1mexp_scalar(void)
     mpfr_init2(mine, 53);
     mpfr_init2(diffm, 256);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -410,8 +397,6 @@ test_log1mexp_scalar(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Clean up mpfr memory */
     mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
@@ -465,7 +450,6 @@ test_exp_avx2(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -500,8 +484,6 @@ test_exp_avx2(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     fprintf(stdout, "     exp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -546,7 +528,6 @@ test_log_avx2(void)
     mpfr_init2(mx, 53);
     mpfr_init2(mlog, 200);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; i += 4)
@@ -587,8 +568,6 @@ test_log_avx2(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Clean up memory for mpfr */
     mpfr_clear(mx);
@@ -635,7 +614,6 @@ test_expm1_avx2(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -670,8 +648,6 @@ test_expm1_avx2(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     fprintf(stdout, "   expm1 - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -716,7 +692,6 @@ test_log1p_avx2(void)
     mpfr_init2(mx, 53);
     mpfr_init2(mlog1p, 200);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -758,8 +733,6 @@ test_log1p_avx2(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Free up mpfr memory */
     mpfr_clear(mx);
@@ -810,7 +783,6 @@ test_log1mexp_avx2(void)
     mpfr_init2(mine, 53);
     mpfr_init2(diffm, 256);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -851,8 +823,6 @@ test_log1mexp_avx2(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Clean up mpfr memory */
     mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
@@ -906,7 +876,6 @@ test_exp_avx512(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -942,8 +911,6 @@ test_exp_avx512(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     fprintf(stdout, "     exp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -988,7 +955,6 @@ test_log_avx512(void)
     mpfr_init2(mx, 53);
     mpfr_init2(mlog, 200);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; i += 8)
@@ -1029,8 +995,6 @@ test_log_avx512(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Clean up memory for mpfr */
     mpfr_clear(mx);
@@ -1075,7 +1039,6 @@ test_expm1_avx512(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -1111,8 +1074,6 @@ test_expm1_avx512(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     fprintf(stdout, "   expm1 - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -1157,7 +1118,6 @@ test_log1p_avx512(void)
     mpfr_init2(mx, 53);
     mpfr_init2(mlog1p, 200);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -1199,8 +1159,6 @@ test_log1p_avx512(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Free up mpfr memory */
     mpfr_clear(mx);
@@ -1251,7 +1209,6 @@ test_log1mexp_avx512(void)
     mpfr_init2(mine, 53);
     mpfr_init2(diffm, 256);
 
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -1292,8 +1249,6 @@ test_log1mexp_avx512(void)
             }
         }
     }
-
-    COY_END_PROFILE(ap);
 
     /* Clean up mpfr memory */
     mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
@@ -1339,7 +1294,6 @@ int
 main(int argc, char *argv[])
 {
 #define MAX_TEST_FUNCS 60
-    coy_profile_begin();
 
     /* Set up the thread pool, thread datas, etc. */
     CoyThreadPool pool_ = {0};
@@ -1390,157 +1344,8 @@ main(int argc, char *argv[])
     coy_batch_completion_destroy(&bc);
     coy_threadpool_destroy(pool);
 
-    coy_profile_end();
-
-#if COY_PROFILE
-    fprintf(stdout, "\n\nTotal Runtime = %.3lf seconds at a frequency of %"PRIu64"\n",
-            coy_global_profiler.total_elapsed, coy_global_profiler.freq);
-
-    u64 log_scalar_elapsed = 0;
-    u64 log_avx2_elapsed = 0;
-    u64 log_avx512_elapsed = 0;
-
-    u64 log1p_scalar_elapsed = 0;
-    u64 log1p_avx2_elapsed = 0;
-    u64 log1p_avx512_elapsed = 0;
-
-    u64 exp_scalar_elapsed = 0;
-    u64 exp_avx2_elapsed = 0;
-    u64 exp_avx512_elapsed = 0;
-
-    u64 expm1_scalar_elapsed = 0;
-    u64 expm1_avx2_elapsed = 0;
-    u64 expm1_avx512_elapsed = 0;
-
-    u64 log1mexp_scalar_elapsed = 0;
-    u64 log1mexp_avx2_elapsed = 0;
-    u64 log1mexp_avx512_elapsed = 0;
-
-    for(i32 i = 0; i < COY_PROFILE_NUM_BLOCKS; ++i)
-    {
-        CoyBlockProfiler *block = &coy_global_profiler.blocks[i];
-        if(block->hit_count)
-        {
-            ElkStr label = elk_str_from_cstring((char *)block->label);
-
-            /* --------------- exp tests --------------- */
-
-            if(elk_str_eq(label, (ElkStr){ .start = "exp-scalar-test", .len = 15}))
-            {
-                exp_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "exp-avx2-test", .len = 13}))
-            {
-                exp_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "exp-avx512-test", .len = 15}))
-            {
-                exp_avx512_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            /* --------------- log tests --------------- */
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log-scalar-test", .len = 15}))
-            {
-                log_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log-avx2-test", .len = 13}))
-            {
-                log_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log-avx512-test", .len = 15}))
-            {
-                log_avx512_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            /* --------------- expm1 tests --------------- */
-
-            if(elk_str_eq(label, (ElkStr){ .start = "expm1-scalar-test", .len = 17}))
-            {
-                expm1_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx2-test", .len = 15}))
-            {
-                expm1_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "expm1-avx512-test", .len = 17}))
-            {
-                expm1_avx512_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            /* --------------- log1p tests --------------- */
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-scalar-test", .len = 17}))
-            {
-                log1p_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx2-test", .len = 15}))
-            {
-                log1p_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1p-avx512-test", .len = 17}))
-            {
-                log1p_avx512_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-
-            /* --------------- log1mexp tests --------------- */
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-scalar-test", .len = 20}))
-            {
-                log1mexp_scalar_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-avx2-test", .len = 18}))
-            {
-                log1mexp_avx2_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            if(elk_str_eq(label, (ElkStr){ .start = "log1mexp-avx512-test", .len = 20}))
-            {
-                log1mexp_avx512_elapsed = block->tsc_elapsed_exclusive; 
-            }
-
-            /* --------------- end of tests section --------------- */
-
-            fprintf(stdout, "%-32s Hits: %3"PRIu64" Exclusive: %6.2lf%%", block->label, block->hit_count, block->exclusive_pct);
-            
-            if(block->inclusive_pct != block->exclusive_pct)
-            {
-                fprintf(stdout, " Inclusive: %6.2lf%%\n", block->inclusive_pct);
-            }
-            else
-            {
-                fprintf(stdout, "\n");
-            }
-        }
-    }
-
-    fprintf(stdout, "\n");
-    fprintf(stdout, "     exp() AVX2 Speed up   = %.2lf\n", (f64)exp_scalar_elapsed / (f64)exp_avx2_elapsed);
-    fprintf(stdout, "     exp() AVX512 Speed up = %.2lf\n", (f64)exp_scalar_elapsed / (f64)exp_avx512_elapsed);
-    fprintf(stdout, "   expm1() AVX2 Speed up   = %.2lf\n", (f64)expm1_scalar_elapsed / (f64)expm1_avx2_elapsed);
-    fprintf(stdout, "   expm1() AVX512 Speed up = %.2lf\n", (f64)expm1_scalar_elapsed / (f64)expm1_avx512_elapsed);
-    fprintf(stdout, "     log() AVX2 Speed up   = %.2lf\n", (f64)log_scalar_elapsed / (f64)log_avx2_elapsed);
-    fprintf(stdout, "     log() AVX512 Speed up = %.2lf\n", (f64)log_scalar_elapsed / (f64)log_avx512_elapsed);
-    fprintf(stdout, "   log1p() AVX2 Speed up   = %.2lf\n", (f64)log1p_scalar_elapsed / (f64)log1p_avx2_elapsed);
-    fprintf(stdout, "   log1p() AVX512 Speed up = %.2lf\n", (f64)log1p_scalar_elapsed / (f64)log1p_avx512_elapsed);
-    fprintf(stdout, "log1mexp() AVX2 Speed up   = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx2_elapsed);
-    fprintf(stdout, "log1mexp() AVX512 Speed up = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx512_elapsed);
-
-#endif
-
     return EXIT_SUCCESS;
 
 #undef MAX_TEST_FUNCS
 }
 
-COY_PROFILE_STATIC_CHECK ;
