@@ -88,12 +88,8 @@ test_exp_scalar(void)
 }
 
 static inline f64
-ulp_error_vs_mpfr_log(f64 x, f64 my_log)
+ulp_error_vs_mpfr_log(f64 x, f64 my_log, mpfr_t mx, mpfr_t mlog)
 {
-    mpfr_t mx, mlog;
-    mpfr_init2(mx, 53);
-    mpfr_init2(mlog, 200);
-
     mpfr_set_d(mx, x, MPFR_RNDN);
     mpfr_log(mlog, mx, MPFR_RNDN);          /* high-precision true value */
     mpfr_set_d(mx, my_log, MPFR_RNDN);      /* my result as mpfr         */
@@ -104,8 +100,6 @@ ulp_error_vs_mpfr_log(f64 x, f64 my_log)
 
     f64 err = mpfr_get_d(mlog, MPFR_RNDN);
 
-    mpfr_clear(mx);
-    mpfr_clear(mlog);
     return err;
 }
 
@@ -137,6 +131,11 @@ test_log_scalar(void)
     f64 const mins[4]  = {  min, mid1, mid2, mid3 };
     f64 const maxs[4]  = { mid1, mid2, mid3,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mlog;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog, 200);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -154,7 +153,7 @@ test_log_scalar(void)
 
             if(diff > 0)
             {
-                f64 mpfr_diff = ulp_error_vs_mpfr_log(x, eagle_math);
+                f64 mpfr_diff = ulp_error_vs_mpfr_log(x, eagle_math, mx, mlog);
                 diff = (i64)nearbyint(mpfr_diff);
                 if(diff > 0) { ++count1; }
 
@@ -168,6 +167,10 @@ test_log_scalar(void)
     }
 
     COY_END_PROFILE(ap);
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mlog);
 
     fprintf(stdout, "     log - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -231,12 +234,8 @@ test_expm1_scalar(void)
 }
 
 static inline f64
-ulp_error_vs_mpfr_log1p(f64 x, f64 my_log1p)
+ulp_error_vs_mpfr_log1p(f64 x, f64 my_log1p, mpfr_t mx, mpfr_t mlog1p)
 {
-    mpfr_t mx, mlog1p;
-    mpfr_init2(mx, 53);
-    mpfr_init2(mlog1p, 200);
-
     mpfr_set_d(mx, x, MPFR_RNDN);
     mpfr_log(mlog1p, mx, MPFR_RNDN);            /* high-precision true value */
     mpfr_set_d(mx, my_log1p, MPFR_RNDN);        /* my result as mpfr         */
@@ -247,8 +246,6 @@ ulp_error_vs_mpfr_log1p(f64 x, f64 my_log1p)
 
     f64 err = mpfr_get_d(mlog1p, MPFR_RNDN);
 
-    mpfr_clear(mx);
-    mpfr_clear(mlog1p);
     return err;
 }
 
@@ -280,6 +277,11 @@ test_log1p_scalar(void)
     f64 const mins[4]  = {  min, mid1, mid2, mid3 };
     f64 const maxs[4]  = { mid1, mid2, mid3,  max };
 
+    /* Set up reusable mpfr variables */
+    mpfr_t mx, mlog1p;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog1p, 200);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -297,7 +299,7 @@ test_log1p_scalar(void)
 
             if(diff > 0) 
             {
-                f64 mpfr_diff = ulp_error_vs_mpfr_log1p(x, eagle_math);
+                f64 mpfr_diff = ulp_error_vs_mpfr_log1p(x, eagle_math, mx, mlog1p);
                 diff = (i64)nearbyint(mpfr_diff);
                 if(diff > 0) { ++count1; }
 
@@ -312,20 +314,16 @@ test_log1p_scalar(void)
 
     COY_END_PROFILE(ap);
 
+    /* Free up mpfr memory */
+    mpfr_clear(mx);
+    mpfr_clear(mlog1p);
+
     fprintf(stdout, "   log1p - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 static inline f64
-ulp_error_vs_mpfr_log1mexp(double x, double my_log1mexp)
+ulp_error_vs_mpfr_log1mexp(double x, double my_log1mexp, mpfr_t mx, mpfr_t neg_x, mpfr_t one_minus_exp, mpfr_t truth, mpfr_t mine, mpfr_t diff)
 {
-    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diff;
-    mpfr_init2(mx, 53);
-    mpfr_init2(neg_x, 256);
-    mpfr_init2(one_minus_exp, 256);
-    mpfr_init2(truth, 256);
-    mpfr_init2(mine, 53);
-    mpfr_init2(diff, 256);
-
     mpfr_set_d(mx, x, MPFR_RNDN);
     mpfr_neg(neg_x, mx, MPFR_RNDN);
     /* 1 - exp(-x) = -expm1(-x) */
@@ -345,7 +343,6 @@ ulp_error_vs_mpfr_log1mexp(double x, double my_log1mexp)
 
     f64 err = mpfr_get_d(diff, MPFR_RNDN);
 
-    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diff, (mpfr_ptr)0);
     return err;
 }
 
@@ -375,6 +372,15 @@ test_log1mexp_scalar(void)
     f64 const mins[2]  = {  min, mid1 };
     f64 const maxs[2]  = { mid1,  max };
 
+    /* Set up memory and variables for mpfr */
+    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diffm;
+    mpfr_init2(mx, 53);
+    mpfr_init2(neg_x, 256);
+    mpfr_init2(one_minus_exp, 256);
+    mpfr_init2(truth, 256);
+    mpfr_init2(mine, 53);
+    mpfr_init2(diffm, 256);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-scalar-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -392,7 +398,7 @@ test_log1mexp_scalar(void)
 
             if(diff > 0) 
             {
-                f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x, eagle_math);
+                f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x, eagle_math, mx, neg_x, one_minus_exp, truth, mine, diffm);
                 diff = (i64)nearbyint(mpfr_diff);
                 if(diff > 0) { ++count1; }
 
@@ -406,6 +412,9 @@ test_log1mexp_scalar(void)
     }
 
     COY_END_PROFILE(ap);
+
+    /* Clean up mpfr memory */
+    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
 
     fprintf(stdout, "log1mexp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -466,7 +475,7 @@ test_exp_avx2(void)
 
             Vec256Pun x = {0};
             Vec256Pun eagle_math = {0};
-            f64 std_math[4] ={0};
+            f64 std_math[4] = {0};
 
             for(i32 j = 0; j < 4; ++j)
             {
@@ -532,6 +541,11 @@ test_log_avx2(void)
     f64 const mins[4]  = {  min, mid1, mid2, mid3 };
     f64 const maxs[4]  = { mid1, mid2, mid3,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mlog;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog, 200);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -558,19 +572,27 @@ test_log_avx2(void)
                 int64_t diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0)
                 {
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log(x.arr[j], eagle_math.arr[j], mx, mlog);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
 
-                    fprintf(stderr, "AVX2  input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "AVX2  input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
     }
 
     COY_END_PROFILE(ap);
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mlog);
 
     fprintf(stdout, "     log - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -689,6 +711,11 @@ test_log1p_avx2(void)
     f64 const mins[4]  = {  min, mid1, mid2, mid3 };
     f64 const maxs[4]  = { mid1, mid2, mid3,  max };
 
+    /* Set up reusable mpfr variables */
+    mpfr_t mx, mlog1p;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog1p, 200);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -718,7 +745,7 @@ test_log1p_avx2(void)
                 if(diff > 0) 
                 {
                     f64 xi = x.arr[j];
-                    f64 mpfr_diff = ulp_error_vs_mpfr_log1p(xi, eagle_math.arr[j]);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1p(xi, eagle_math.arr[j], mx, mlog1p);
                     diff = (i64)nearbyint(mpfr_diff);
                     if(diff > 0) { ++count1; }
 
@@ -733,6 +760,10 @@ test_log1p_avx2(void)
     }
 
     COY_END_PROFILE(ap);
+
+    /* Free up mpfr memory */
+    mpfr_clear(mx);
+    mpfr_clear(mlog1p);
 
     fprintf(stdout, "   log1p - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -770,6 +801,15 @@ test_log1mexp_avx2(void)
     f64 const mins[2]  = {  min, mid1 };
     f64 const maxs[2]  = { mid1,  max };
 
+    /* Set up memory and variables for mpfr */
+    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diffm;
+    mpfr_init2(mx, 53);
+    mpfr_init2(neg_x, 256);
+    mpfr_init2(one_minus_exp, 256);
+    mpfr_init2(truth, 256);
+    mpfr_init2(mine, 53);
+    mpfr_init2(diffm, 256);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx2-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -798,7 +838,7 @@ test_log1mexp_avx2(void)
 
                 if(diff > 0) 
                 {
-                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j]);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j], mx, neg_x, one_minus_exp, truth, mine, diffm);
                     diff = (i64)nearbyint(mpfr_diff);
                     if(diff > 0) { ++count1; }
 
@@ -813,6 +853,9 @@ test_log1mexp_avx2(void)
     }
 
     COY_END_PROFILE(ap);
+
+    /* Clean up mpfr memory */
+    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
 
     fprintf(stdout, "log1mexp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -940,6 +983,11 @@ test_log_avx512(void)
     f64 const mins[4]  = {  min, mid1, mid2, mid3 };
     f64 const maxs[4]  = { mid1, mid2, mid3,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mlog;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog, 200);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -966,18 +1014,27 @@ test_log_avx512(void)
                 i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0)
                 {
-                    fprintf(stderr, "AVX512 input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log(x.arr[j], eagle_math.arr[j], mx, mlog);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "AVX512 input: %a stdlib log: %a custom log: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
     }
 
     COY_END_PROFILE(ap);
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mlog);
 
     fprintf(stdout, "     log - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -1095,6 +1152,11 @@ test_log1p_avx512(void)
     f64 const mins[4]  = {  min, mid1, mid2, mid3 };
     f64 const maxs[4]  = { mid1, mid2, mid3,  max };
 
+    /* Set up reusable mpfr variables */
+    mpfr_t mx, mlog1p;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mlog1p, 200);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -1124,7 +1186,7 @@ test_log1p_avx512(void)
                 if(diff > 0)
                 {
                     f64 xi = x.arr[j];
-                    f64 mpfr_diff = ulp_error_vs_mpfr_log1p(xi, eagle_math.arr[j]);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1p(xi, eagle_math.arr[j], mx, mlog1p);
                     diff = (i64)nearbyint(mpfr_diff);
                     if(diff > 0) { ++count1; }
 
@@ -1139,6 +1201,10 @@ test_log1p_avx512(void)
     }
 
     COY_END_PROFILE(ap);
+
+    /* Free up mpfr memory */
+    mpfr_clear(mx);
+    mpfr_clear(mlog1p);
 
     fprintf(stdout, "   log1p - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -1176,6 +1242,15 @@ test_log1mexp_avx512(void)
     f64 const mins[2]  = {  min, mid1 };
     f64 const maxs[2]  = { mid1,  max };
 
+    /* Set up memory and variables for mpfr */
+    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diffm;
+    mpfr_init2(mx, 53);
+    mpfr_init2(neg_x, 256);
+    mpfr_init2(one_minus_exp, 256);
+    mpfr_init2(truth, 256);
+    mpfr_init2(mine, 53);
+    mpfr_init2(diffm, 256);
+
     CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx512-test");
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -1204,7 +1279,7 @@ test_log1mexp_avx512(void)
 
                 if(diff > 0) 
                 {
-                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j]);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j], mx, neg_x, one_minus_exp, truth, mine, diffm);
                     diff = (i64)nearbyint(mpfr_diff);
                     if(diff > 0) { ++count1; }
 
@@ -1219,6 +1294,9 @@ test_log1mexp_avx512(void)
     }
 
     COY_END_PROFILE(ap);
+
+    /* Clean up mpfr memory */
+    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
 
     fprintf(stdout, "log1mexp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
