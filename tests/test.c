@@ -11,6 +11,7 @@
 #include "elk.h"
 #include "magpie.h"
 #include "coyote.h"
+#include "packrat.h"
 
 #include "eagle_test.h"
 #include "../exp/exp.c"
@@ -40,7 +41,7 @@ test_exp_scalar(void)
     test_result = eagle_exp(min_exp_arg - 1.0); Assert(test_result == 0.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 min = min_exp_arg;          /* Negative inputs with representable outputs. */
@@ -64,7 +65,7 @@ test_exp_scalar(void)
             f64 const minr = mins[range];
             f64 const maxr = maxs[range];
 
-            f64 x = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+            f64 x = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
             f64 std_math = exp(x);
             f64 eagle_math = eagle_exp(x);
 
@@ -83,7 +84,7 @@ test_exp_scalar(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "     exp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "     exp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 static inline f64
@@ -119,7 +120,7 @@ test_log_scalar(void)
     test_result = eagle_log(EAGLE_POS_INF); Assert(test_result == EAGLE_POS_INF);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals                  */
@@ -144,7 +145,7 @@ test_log_scalar(void)
             f64 const minr = mins[range];
             f64 const maxr = maxs[range];
 
-            f64 x = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+            f64 x = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
             f64 std_math = log(x);
             f64 eagle_math = eagle_log(x);
 
@@ -168,7 +169,7 @@ test_log_scalar(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "     log - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "     log - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -183,7 +184,7 @@ test_expm1_scalar(void)
     test_result = eagle_expm1(min_exp_arg - 1.0); Assert(test_result == -1.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 min = min_exp_arg;          /* Negative inputs with representable outputs. */
@@ -207,7 +208,7 @@ test_expm1_scalar(void)
             f64 const minr = mins[range];
             f64 const maxr = maxs[range];
 
-            f64 x = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+            f64 x = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
             f64 std_math = expm1(x);
             f64 eagle_math = eagle_expm1(x);
 
@@ -226,7 +227,7 @@ test_expm1_scalar(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "   expm1 - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "   expm1 - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 static inline f64
@@ -262,7 +263,7 @@ test_log1p_scalar(void)
     test_result = eagle_log1p(EAGLE_POS_INF); Assert(test_result == EAGLE_POS_INF);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals                  */
@@ -287,7 +288,7 @@ test_log1p_scalar(void)
             f64 const minr = mins[range];
             f64 const maxr = maxs[range];
 
-            f64 x = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+            f64 x = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
             f64 std_math = log1p(x);
             f64 eagle_math = eagle_log1p(x);
 
@@ -311,7 +312,7 @@ test_log1p_scalar(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "   log1p - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "   log1p - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 static inline f64
@@ -359,7 +360,7 @@ test_log1mexp_scalar(void)
     test_result = eagle_log1mexp(EAGLE_POS_INF); Assert(test_result == 0.0);
 
     /* Seed random number generator for reproducible results */
-     srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals.        */
@@ -382,7 +383,7 @@ test_log1mexp_scalar(void)
             f64 const minr = mins[range];
             f64 const maxr = maxs[range];
 
-            f64 x = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+            f64 x = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
             f64 std_math = test_std_log1mexp(x);
             f64 eagle_math = eagle_log1mexp(x);
 
@@ -406,7 +407,7 @@ test_log1mexp_scalar(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "log1mexp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "log1mexp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 #ifdef __AVX2__ 
@@ -439,7 +440,7 @@ test_exp_avx2(void)
     Assert(test_result.arr[0] == 0.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 min = min_exp_arg;          /* Negative inputs with representable outputs. */
@@ -469,7 +470,7 @@ test_exp_avx2(void)
 
             for(i32 j = 0; j < 4; ++j)
             {
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = exp(x.arr[j]);
             }
 
@@ -493,7 +494,7 @@ test_exp_avx2(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "     exp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "     exp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -514,7 +515,7 @@ test_log_avx2(void)
     Assert(test_result.arr[3] == EAGLE_POS_INF);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals                  */
@@ -546,7 +547,7 @@ test_log_avx2(void)
                 f64 const minr = mins[range];
                 f64 const maxr = maxs[range];
 
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = log(x.arr[j]);
             }
 
@@ -571,7 +572,7 @@ test_log_avx2(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "     log - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "     log - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -596,7 +597,7 @@ test_expm1_avx2(void)
     Assert(test_result.arr[0] == -1.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 min = min_exp_arg;          /* Negative inputs with representable outputs. */
@@ -626,7 +627,7 @@ test_expm1_avx2(void)
 
             for(i32 j = 0; j < 4; ++j)
             {
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = expm1(x.arr[j]);
             }
 
@@ -650,7 +651,7 @@ test_expm1_avx2(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "   expm1 - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "   expm1 - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -671,7 +672,7 @@ test_log1p_avx2(void)
     Assert(test_result.arr[3] == EAGLE_POS_INF);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals                  */
@@ -703,7 +704,7 @@ test_log1p_avx2(void)
 
             for(i64 j = 0; j < 4; ++j)
             {
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = log1p(x.arr[j]);
             }
 
@@ -733,7 +734,7 @@ test_log1p_avx2(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "   log1p - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "   log1p - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -754,7 +755,7 @@ test_log1mexp_avx2(void)
     Assert(test_result.arr[3] == 0.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals.        */
@@ -784,7 +785,7 @@ test_log1mexp_avx2(void)
 
             for(i64 j = 0; j < 4; ++j)
             {
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = eagle_log1mexp(x.arr[j]);
             }
 
@@ -813,7 +814,7 @@ test_log1mexp_avx2(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "log1mexp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "log1mexp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 #endif
@@ -846,7 +847,7 @@ test_exp_avx512(void)
     Assert(test_result.arr[4] == 0.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 min = min_exp_arg;          /* Negative inputs with representable outputs. */
@@ -876,7 +877,7 @@ test_exp_avx512(void)
 
             for(i64 j = 0; j < 8; ++j)
             {
-                f64 val = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                f64 val = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 x.arr[j] = val;
                 std_math[j] = exp(val);
             }
@@ -901,7 +902,7 @@ test_exp_avx512(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "     exp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "     exp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -922,7 +923,7 @@ test_log_avx512(void)
     Assert(test_result.arr[3] == EAGLE_POS_INF);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals                  */
@@ -954,7 +955,7 @@ test_log_avx512(void)
                 f64 const minr = mins[range];
                 f64 const maxr = maxs[range];
 
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = log(x.arr[j]);
             }
 
@@ -978,7 +979,7 @@ test_log_avx512(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "     log - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "     log - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -1001,7 +1002,7 @@ test_expm1_avx512(void)
     Assert(test_result.arr[4] == -1.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 min = min_exp_arg;          /* Negative inputs with representable outputs. */
@@ -1031,7 +1032,7 @@ test_expm1_avx512(void)
 
             for(i64 j = 0; j < 8; ++j)
             {
-                f64 val = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                f64 val = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 x.arr[j] = val;
                 std_math[j] = expm1(val);
             }
@@ -1056,7 +1057,7 @@ test_expm1_avx512(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "   expm1 - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "   expm1 - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -1077,7 +1078,7 @@ test_log1p_avx512(void)
     Assert(test_result.arr[3] == EAGLE_POS_INF);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals                  */
@@ -1109,7 +1110,7 @@ test_log1p_avx512(void)
 
             for(i64 j = 0; j < 8; ++j)
             {
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = log1p(x.arr[j]);
             }
 
@@ -1139,7 +1140,7 @@ test_log1p_avx512(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "   log1p - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "   log1p - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 void
@@ -1160,7 +1161,7 @@ test_log1mexp_avx512(void)
     Assert(test_result.arr[3] == 0.0);
 
     /* Seed random number generator for reproducible results */
-    srand(11);
+    ElkRandomState ran = elk_random_state_create(11);
 
     /* Set ranges to focus testing on, make sure each range receives adequate testing. */
     f64 const min = EAGLE_SUBNORM_MIN;  /* Subnormals.        */
@@ -1190,7 +1191,7 @@ test_log1mexp_avx512(void)
 
             for(i64 j = 0; j < 8; ++j)
             {
-                x.arr[j] = minr + (f64)rand() / RAND_MAX * (maxr - minr);
+                x.arr[j] = minr + elk_random_state_uniform_f64(&ran) * (maxr - minr);
                 std_math[j] = eagle_log1mexp(x.arr[j]);
             }
 
@@ -1219,45 +1220,97 @@ test_log1mexp_avx512(void)
 
     COY_END_PROFILE(ap);
 
-    fprintf(stdout, "log1mexp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0);
+    fprintf(stdout, "log1mexp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 #endif
 
+typedef void (*TestFunction)(void);
+
+typedef struct
+{
+    TestFunction func;
+    CoyBatchCompletion *bc;
+} ThreadData;
+
+
+static inline void
+test_runner(void *data)
+{
+    ThreadData *td = data;
+    td->func();
+    coy_batch_completion_task_done(td->bc);
+}
+
+static inline void
+add_test(PakArrayLedger *ledger, ThreadData *tds, CoyFuture *futures, CoyBatchCompletion *bc, TestFunction fun)
+{
+    Assert(!pak_array_ledger_full(ledger));
+
+    size idx = pak_array_ledger_push_back_index(ledger);
+
+    tds[idx].func = fun;
+    tds[idx].bc = bc;
+    futures[idx] = coy_future_create(test_runner, &tds[idx]);
+    coy_batch_completion_task_submit(bc, &futures[idx]);
+}
+
+#define ADD_TEST(test_fun) add_test(&ledger, tds, futures, &bc, test_fun)
+
 int
 main(int argc, char *argv[])
 {
+#define MAX_TEST_FUNCS 60
     coy_profile_begin();
+
+    /* Set up the thread pool, thread datas, etc. */
+    CoyThreadPool pool_ = {0};
+    CoyThreadPool *pool = &pool_;
+    i32 n_threads = coy_cpu_count() / 2 - 1;
+    n_threads = n_threads < 1 ? 1 : n_threads;
+    coy_threadpool_initialize(pool, n_threads);
+
+    printf("Using %d threads for running tests.\n\n", n_threads);
+
+    PakArrayLedger ledger = pak_array_ledger_create(MAX_TEST_FUNCS);
+    ThreadData tds[MAX_TEST_FUNCS] = {0};
+    CoyFuture futures[MAX_TEST_FUNCS] = {0};
+    CoyBatchCompletion bc = {0};
+    coy_batch_completion_init(&bc, pool);
 
 #if 1
 
-    test_exp_scalar();
-    test_log_scalar();
-    test_expm1_scalar();
-    test_log1p_scalar();
-    test_log1mexp_scalar();
+    ADD_TEST(test_exp_scalar);
+    ADD_TEST(test_log_scalar);
+    ADD_TEST(test_expm1_scalar);
+    ADD_TEST(test_log1p_scalar);
+    ADD_TEST(test_log1mexp_scalar);
 
 #endif
 
 #if 1 && defined(__AVX2__ ) 
 
-    test_exp_avx2();
-    test_log_avx2();
-    test_expm1_avx2();
-    test_log1p_avx2();
-    test_log1mexp_avx2();
+    ADD_TEST(test_exp_avx2);
+    ADD_TEST(test_log_avx2);
+    ADD_TEST(test_expm1_avx2);
+    ADD_TEST(test_log1p_avx2);
+    ADD_TEST(test_log1mexp_avx2);
 
 #endif
 
 #if 1 && defined(__AVX512F__) && defined(__AVX512BW__)
 
-    test_exp_avx512();
-    test_log_avx512();
-    test_expm1_avx512();
-    test_log1p_avx512();
-    test_log1mexp_avx512();
+    ADD_TEST(test_exp_avx512);
+    ADD_TEST(test_log_avx512);
+    ADD_TEST(test_expm1_avx512);
+    ADD_TEST(test_log1p_avx512);
+    ADD_TEST(test_log1mexp_avx512);
 
 #endif
+
+    coy_batch_completion_wait(&bc);
+    coy_batch_completion_destroy(&bc);
+    coy_threadpool_destroy(pool);
 
     coy_profile_end();
 
@@ -1406,7 +1459,10 @@ main(int argc, char *argv[])
     fprintf(stdout, "log1mexp() AVX512 Speed up = %.2lf\n", (f64)log1mexp_scalar_elapsed / (f64)log1mexp_avx512_elapsed);
 
 #endif
+
     return EXIT_SUCCESS;
+
+#undef MAX_TEST_FUNCS
 }
 
 COY_PROFILE_STATIC_CHECK ;
