@@ -1404,7 +1404,7 @@ main(int argc, char *argv[])
 
 #endif
 
-#if 0 && defined(__AVX2__ ) 
+#if 1 && defined(__AVX2__ ) 
 
     ADD_TEST(test_exp_avx2);
     ADD_TEST(test_log_avx2);
@@ -1414,7 +1414,7 @@ main(int argc, char *argv[])
 
 #endif
 
-#if 0 && defined(__AVX512F__) && defined(__AVX512BW__)
+#if 1 && defined(__AVX512F__) && defined(__AVX512BW__)
 
     ADD_TEST(test_exp_avx512);
     ADD_TEST(test_log_avx512);

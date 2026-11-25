@@ -1,5 +1,17 @@
 #include "../tests/eagle_test.h"
 
+static inline void
+eagle_twosum(f64 a, f64 b, f64 *s, f64 *e)
+{
+    f64 sum = a + b;
+    f64 b_virtual = sum - a;
+    f64 a_virtual = sum - b_virtual;
+    f64 b_roundoff = b - b_virtual;
+    f64 a_roundoff = a - a_virtual;
+    *s = sum;
+    *e = a_roundoff + b_roundoff;
+}
+
 static inline f64
 eagle_log1p(f64 x)
 {
@@ -80,11 +92,30 @@ eagle_log1p(f64 x)
 
         return x + x * x * sum; 
     }
+    else
+    {
+        f64 s_hi, s_lo;
+        eagle_twosum(1.0, x, &s_hi, &s_lo);
 
-    else { return eagle_log(1.0 + x); }
+        f64 corr = s_lo / s_hi;
+        return eagle_log(s_hi) + corr;
+    }
 }
 
 #ifdef __AVX2__
+
+/* AVX2: 4-wide f64 TwoSum (exact s + e = a + b) */
+static inline void
+eagle_avx2_twosum(__m256d a, __m256d b, __m256d *s, __m256d *e)
+{
+    __m256d sum        = _mm256_add_pd(a, b);
+    __m256d b_virtual  = _mm256_sub_pd(sum, a);
+    __m256d a_virtual  = _mm256_sub_pd(sum, b_virtual);
+    __m256d b_roundoff = _mm256_sub_pd(b, b_virtual);
+    __m256d a_roundoff = _mm256_sub_pd(a, a_virtual);
+    *s = sum;
+    *e = _mm256_add_pd(a_roundoff, b_roundoff);
+}
 
 static inline __m256d
 eagle_avx2_log1p_pd(__m256d x)
@@ -174,10 +205,11 @@ eagle_avx2_log1p_pd(__m256d x)
     /* Handle NOT small x */
     __m256d not_small_x_result;
     {
-        __m256d u = _mm256_add_pd(x, _mm256_set1_pd(1.0));
-        __m256d d = _mm256_sub_pd(u, _mm256_set1_pd(1.0));
-        __m256d safe_d = _mm256_blendv_pd(d, _mm256_set1_pd(1.0), _mm256_cmp_pd(d, _mm256_set1_pd(0.0), _CMP_EQ_OQ));
-        not_small_x_result = _mm256_mul_pd(eagle_avx2_log_pd(u), _mm256_div_pd(x, safe_d));
+        __m256d s_hi, s_lo;
+        eagle_avx2_twosum(_mm256_set1_pd(1.0), x, &s_hi, &s_lo);
+
+        __m256d corr = _mm256_div_pd(s_lo, s_hi);
+        not_small_x_result = _mm256_add_pd(eagle_avx2_log_pd(s_hi), corr);
     }
 
     __m256d final = _mm256_blendv_pd(not_small_x_result, small_x_result, small_mask);
@@ -193,6 +225,19 @@ eagle_avx2_log1p_pd(__m256d x)
 #endif
 
 #if ELK_AVX_512
+
+/* AVX-512F: 8-wide f64 TwoSum (exact s + e = a + b) */
+static inline void
+eagle_avx512_twosum(__m512d a, __m512d b, __m512d *s, __m512d *e)
+{
+    __m512d sum        = _mm512_add_pd(a, b);
+    __m512d b_virtual  = _mm512_sub_pd(sum, a);
+    __m512d a_virtual  = _mm512_sub_pd(sum, b_virtual);
+    __m512d b_roundoff = _mm512_sub_pd(b, b_virtual);
+    __m512d a_roundoff = _mm512_sub_pd(a, a_virtual);
+    *s = sum;
+    *e = _mm512_add_pd(a_roundoff, b_roundoff);
+}
 
 static inline __m512d
 eagle_avx512_log1p_pd(__m512d x)
@@ -282,10 +327,11 @@ eagle_avx512_log1p_pd(__m512d x)
     /* Handle NOT small x */
     __m512d not_small_x_result;
     {
-        __m512d u = _mm512_add_pd(x, _mm512_set1_pd(1.0));
-        __m512d d = _mm512_sub_pd(u, _mm512_set1_pd(1.0));
-        __m512d safe_d = _mm512_mask_blend_pd(_mm512_cmp_pd_mask(d, _mm512_set1_pd(0.0), _CMP_EQ_OQ), d, _mm512_set1_pd(1.0));
-        not_small_x_result = _mm512_mul_pd(eagle_avx512_log_pd(u), _mm512_div_pd(x, safe_d));
+        __m512d s_hi, s_lo;
+        eagle_avx512_twosum(_mm512_set1_pd(1.0), x, &s_hi, &s_lo);
+
+        __m512d corr = _mm512_div_pd(s_lo, s_hi);
+        not_small_x_result = _mm512_add_pd(eagle_avx512_log_pd(s_hi), corr);
     }
 
     __m512d final = _mm512_mask_blend_pd(small_mask, not_small_x_result, small_x_result);
