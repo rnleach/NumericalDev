@@ -27,7 +27,41 @@ _Static_assert(DBL_HAS_SUBNORM == 1, "Subnormal numbers not supported.");
 static f64 const min_exp_arg = -0x1.74910d52d3050p+0009;
 static f64 const max_exp_arg = +0x1.62e42fefa39efp+0009;
 
-#define COUNT_TRIALS (8LL * 100000000LL)
+#define COUNT_TRIALS (8LL * 100000LL)
+
+static inline f64
+ulp_error_vs_mpfr(f64 x, f64 my_val, mpfr_t mx, mpfr_t mtrue)
+{
+    mpfr_set_d(mx, x, MPFR_RNDN);
+    /* … compute true value into mtrue … */
+
+    mpfr_set_d(mx, my_val, MPFR_RNDN);
+    mpfr_sub(mtrue, mtrue, mx, MPFR_RNDN);   /* true - mine */
+
+    if (mpfr_zero_p(mx)) {
+        /* measure in units of the smallest positive double */
+        mpfr_mul_2si(mtrue, mtrue, 1074, MPFR_RNDN);
+    } else {
+        /* 2^(exp-53) is the normal ulp;
+           for subnormals MPFR still gives the normalized exp,
+           so we clamp the scale factor. */
+        mpfr_exp_t e = mpfr_get_exp(mx);
+        mpfr_exp_t scale = 53 - e;
+        if (e < -1021)               /* subnormal */
+            scale = 1074;
+        mpfr_mul_2si(mtrue, mtrue, scale, MPFR_RNDN);
+    }
+
+    return mpfr_get_d(mtrue, MPFR_RNDN);
+}
+
+static inline f64
+ulp_error_vs_mpfr_exp(f64 x, f64 my, mpfr_t mx, mpfr_t mt)
+{
+    mpfr_set_d(mx, x, MPFR_RNDN);
+    mpfr_exp(mt, mx, MPFR_RNDN);
+    return ulp_error_vs_mpfr(x, my, mx, mt);   /* uses the corrected version above */
+}
 
 void
 test_exp_scalar(void)
@@ -57,6 +91,11 @@ test_exp_scalar(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mexp;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mexp, 200);
+
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -71,33 +110,34 @@ test_exp_scalar(void)
             i64 diff = f64_ulp_distance(std_math, eagle_math);
             ++count;
 
-            if(diff > 0) { ++count1; }
-
-            if(diff > 1)
+            if(diff > 0)
             {
-                fprintf(stderr, "scalar input: %a stdlib exp: %a custom exp: %a difference in ulps %ld\n",
-                        x, std_math, eagle_math, diff);
+                f64 mpfr_diff = ulp_error_vs_mpfr_exp(x, eagle_math, mx, mexp);
+                diff = (i64)nearbyint(mpfr_diff);
+                if(diff > 0) { ++count1; }
+
+                if(diff > 1)
+                {
+                    fprintf(stderr, "scalar input: %a stdlib exp: %a custom exp: %a difference in ulps %ld\n",
+                            x, std_math, eagle_math, diff);
+                }
             }
         }
     }
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mexp);
 
     fprintf(stdout, "     exp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 static inline f64
-ulp_error_vs_mpfr_log(f64 x, f64 my_log, mpfr_t mx, mpfr_t mlog)
+ulp_error_vs_mpfr_log(f64 x, f64 my, mpfr_t mx, mpfr_t mt)
 {
     mpfr_set_d(mx, x, MPFR_RNDN);
-    mpfr_log(mlog, mx, MPFR_RNDN);          /* high-precision true value */
-    mpfr_set_d(mx, my_log, MPFR_RNDN);      /* my result as mpfr         */
-    mpfr_sub(mlog, mlog, mx, MPFR_RNDN);    /* true - my                 */
-
-    /* Convert absolute difference into ulps of the double result ulp = 2^(mpfr_exp(mx) - 53) */
-    mpfr_mul_2si(mlog, mlog, 53 - mpfr_get_exp(mx), MPFR_RNDN);
-
-    f64 err = mpfr_get_d(mlog, MPFR_RNDN);
-
-    return err;
+    mpfr_log(mt, mx, MPFR_RNDN);
+    return ulp_error_vs_mpfr(x, my, mx, mt);
 }
 
 void
@@ -169,6 +209,14 @@ test_log_scalar(void)
     fprintf(stdout, "     log - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
+static inline f64
+ulp_error_vs_mpfr_expm1(f64 x, f64 my, mpfr_t mx, mpfr_t mt)
+{
+    mpfr_set_d(mx, x, MPFR_RNDN);
+    mpfr_expm1(mt, mx, MPFR_RNDN);
+    return ulp_error_vs_mpfr(x, my, mx, mt);
+}
+
 void
 test_expm1_scalar(void)
 {
@@ -197,6 +245,11 @@ test_expm1_scalar(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mexp;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mexp, 200);
+
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -211,33 +264,34 @@ test_expm1_scalar(void)
             i64 diff = f64_ulp_distance(std_math, eagle_math);
             ++count;
 
-            if(diff > 0) { ++count1; }
-
-            if(diff > 1)
+            if(diff > 0)
             {
-                fprintf(stderr, "scalar input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
-                        x, std_math, eagle_math, diff);
+                f64 mpfr_diff = ulp_error_vs_mpfr_expm1(x, eagle_math, mx, mexp);
+                diff = (i64)nearbyint(mpfr_diff);
+                if(diff > 0) { ++count1; }
+
+                if(diff > 1)
+                {
+                    fprintf(stderr, "scalar input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
+                            x, std_math, eagle_math, diff);
+                }
             }
         }
     }
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mexp);
 
     fprintf(stdout, "   expm1 - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
 
 static inline f64
-ulp_error_vs_mpfr_log1p(f64 x, f64 my_log1p, mpfr_t mx, mpfr_t mlog1p)
+ulp_error_vs_mpfr_log1p(f64 x, f64 my, mpfr_t mx, mpfr_t mt)
 {
     mpfr_set_d(mx, x, MPFR_RNDN);
-    mpfr_log(mlog1p, mx, MPFR_RNDN);            /* high-precision true value */
-    mpfr_set_d(mx, my_log1p, MPFR_RNDN);        /* my result as mpfr         */
-    mpfr_sub(mlog1p, mlog1p, mx, MPFR_RNDN);    /* true - my                 */
-
-    /* Convert absolute difference into ulps of the double result ulp = 2^(mpfr_exp(mx) - 53) */
-    mpfr_mul_2si(mlog1p, mlog1p, 53 - mpfr_get_exp(mx), MPFR_RNDN);
-
-    f64 err = mpfr_get_d(mlog1p, MPFR_RNDN);
-
-    return err;
+    mpfr_log1p(mt, mx, MPFR_RNDN);
+    return ulp_error_vs_mpfr(x, my, mx, mt);
 }
 
 void
@@ -310,28 +364,14 @@ test_log1p_scalar(void)
 }
 
 static inline f64
-ulp_error_vs_mpfr_log1mexp(double x, double my_log1mexp, mpfr_t mx, mpfr_t neg_x, mpfr_t one_minus_exp, mpfr_t truth, mpfr_t mine, mpfr_t diff)
+ulp_error_vs_mpfr_log1mexp(f64 x, f64 my, mpfr_t mx, mpfr_t mt)
 {
     mpfr_set_d(mx, x, MPFR_RNDN);
-    mpfr_neg(neg_x, mx, MPFR_RNDN);
-    /* 1 - exp(-x) = -expm1(-x) */
-    mpfr_expm1(one_minus_exp, neg_x, MPFR_RNDN);
-    mpfr_neg(one_minus_exp, one_minus_exp, MPFR_RNDN);
-    mpfr_log(truth, one_minus_exp, MPFR_RNDN);
-
-    mpfr_set_d(mine, my_log1mexp, MPFR_RNDN);
-    mpfr_sub(diff, truth, mine, MPFR_RNDN);
-
-    mpfr_exp_t exp2 = mpfr_zero_p(mine) ? -1022 : mpfr_get_exp(mine);
-    if(exp2 < -1021)
-    {
-        exp2 = -1021; /* subnormal binary64 ULP is 2^-1074 = 2^(-53 - (-1021)) */
-    }
-    mpfr_mul_2si(diff, diff, 53 - exp2, MPFR_RNDN);
-
-    f64 err = mpfr_get_d(diff, MPFR_RNDN);
-
-    return err;
+    mpfr_neg(mx, mx, MPFR_RNDN);
+    mpfr_expm1(mt, mx, MPFR_RNDN);
+    mpfr_neg(mt, mt, MPFR_RNDN);
+    mpfr_log(mt, mt, MPFR_RNDN);
+    return ulp_error_vs_mpfr(x, my, mx, mt);
 }
 
 void
@@ -361,13 +401,9 @@ test_log1mexp_scalar(void)
     f64 const maxs[2]  = { mid1,  max };
 
     /* Set up memory and variables for mpfr */
-    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diffm;
+    mpfr_t mx, mt;
     mpfr_init2(mx, 53);
-    mpfr_init2(neg_x, 256);
-    mpfr_init2(one_minus_exp, 256);
-    mpfr_init2(truth, 256);
-    mpfr_init2(mine, 53);
-    mpfr_init2(diffm, 256);
+    mpfr_init2(mt, 256);
 
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -385,7 +421,7 @@ test_log1mexp_scalar(void)
 
             if(diff > 0) 
             {
-                f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x, eagle_math, mx, neg_x, one_minus_exp, truth, mine, diffm);
+                f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x, eagle_math, mx, mt);
                 diff = (i64)nearbyint(mpfr_diff);
                 if(diff > 0) { ++count1; }
 
@@ -399,7 +435,7 @@ test_log1mexp_scalar(void)
     }
 
     /* Clean up mpfr memory */
-    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
+    mpfr_clears(mx, mt, (mpfr_ptr)0);
 
     fprintf(stdout, "log1mexp - Scalar |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -450,6 +486,11 @@ test_exp_avx2(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mexp;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mexp, 200);
+
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -474,16 +515,25 @@ test_exp_avx2(void)
                 i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0)
                 {
-                    fprintf(stderr, "avx2 input: %a stdlib exp: %a custom exp: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_exp(x.arr[j], eagle_math.arr[j], mx, mexp);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "avx2 input: %a stdlib exp: %a custom exp: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
     }
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mexp);
 
     fprintf(stdout, "     exp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -614,6 +664,11 @@ test_expm1_avx2(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mexp;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mexp, 200);
+
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -638,16 +693,25 @@ test_expm1_avx2(void)
                 i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0)
                 {
-                    fprintf(stderr, "avx2 input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_expm1(x.arr[j], eagle_math.arr[j], mx, mexp);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "avx2 input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
     }
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mexp);
 
     fprintf(stdout, "   expm1 - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -775,13 +839,9 @@ test_log1mexp_avx2(void)
     f64 const maxs[2]  = { mid1,  max };
 
     /* Set up memory and variables for mpfr */
-    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diffm;
+    mpfr_t mx, mt;
     mpfr_init2(mx, 53);
-    mpfr_init2(neg_x, 256);
-    mpfr_init2(one_minus_exp, 256);
-    mpfr_init2(truth, 256);
-    mpfr_init2(mine, 53);
-    mpfr_init2(diffm, 256);
+    mpfr_init2(mt, 256);
 
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -810,7 +870,7 @@ test_log1mexp_avx2(void)
 
                 if(diff > 0) 
                 {
-                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j], mx, neg_x, one_minus_exp, truth, mine, diffm);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j], mx, mt);
                     diff = (i64)nearbyint(mpfr_diff);
                     if(diff > 0) { ++count1; }
 
@@ -825,7 +885,7 @@ test_log1mexp_avx2(void)
     }
 
     /* Clean up mpfr memory */
-    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
+    mpfr_clears(mx, mt, (mpfr_ptr)0);
 
     fprintf(stdout, "log1mexp - AVX2   |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -876,6 +936,11 @@ test_exp_avx512(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mexp;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mexp, 200);
+
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -901,16 +966,25 @@ test_exp_avx512(void)
                 i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0)
                 {
-                    fprintf(stderr, "AVX512 input: %a stdlib exp: %a custom exp: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_exp(x.arr[j], eagle_math.arr[j], mx, mexp);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "AVX512 input: %a stdlib exp: %a custom exp: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
     }
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mexp);
 
     fprintf(stdout, "     exp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -1039,6 +1113,11 @@ test_expm1_avx512(void)
     f64 const mins[3]  = {  min, mid1, mid2 };
     f64 const maxs[3]  = { mid1, mid2,  max };
 
+    /* Set up some reusable memory for mpfr testing. */
+    mpfr_t mx, mexp;
+    mpfr_init2(mx, 53);
+    mpfr_init2(mexp, 200);
+
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
         for(i64 i = lows[range]; i < highs[range]; ++i)
@@ -1064,16 +1143,25 @@ test_expm1_avx512(void)
                 i64 diff = f64_ulp_distance(std_math[j], eagle_math.arr[j]);
                 ++count;
 
-                if(diff > 0) { ++count1; }
-
-                if(diff > 1)
+                if(diff > 0)
                 {
-                    fprintf(stderr, "AVX512 input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
-                            x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_expm1(x.arr[j], eagle_math.arr[j], mx, mexp);
+                    diff = (i64)nearbyint(mpfr_diff);
+                    if(diff > 0) { ++count1; }
+
+                    if(diff > 1)
+                    {
+                        fprintf(stderr, "AVX512 input: %a stdlib expm1: %a custom expm1: %a difference in ulps %ld\n",
+                                x.arr[j], std_math[j], eagle_math.arr[j], diff);
+                    }
                 }
             }
         }
     }
+
+    /* Clean up memory for mpfr */
+    mpfr_clear(mx);
+    mpfr_clear(mexp);
 
     fprintf(stdout, "   expm1 - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -1201,13 +1289,9 @@ test_log1mexp_avx512(void)
     f64 const maxs[2]  = { mid1,  max };
 
     /* Set up memory and variables for mpfr */
-    mpfr_t mx, neg_x, one_minus_exp, truth, mine, diffm;
+    mpfr_t mx, mt;
     mpfr_init2(mx, 53);
-    mpfr_init2(neg_x, 256);
-    mpfr_init2(one_minus_exp, 256);
-    mpfr_init2(truth, 256);
-    mpfr_init2(mine, 53);
-    mpfr_init2(diffm, 256);
+    mpfr_init2(mt, 256);
 
     for(size range = 0; range < ECO_ARRAY_SIZE(lows); ++range)
     {
@@ -1236,7 +1320,7 @@ test_log1mexp_avx512(void)
 
                 if(diff > 0) 
                 {
-                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j], mx, neg_x, one_minus_exp, truth, mine, diffm);
+                    f64 mpfr_diff = ulp_error_vs_mpfr_log1mexp(x.arr[j], eagle_math.arr[j], mx, mt);
                     diff = (i64)nearbyint(mpfr_diff);
                     if(diff > 0) { ++count1; }
 
@@ -1251,7 +1335,7 @@ test_log1mexp_avx512(void)
     }
 
     /* Clean up mpfr memory */
-    mpfr_clears(mx, neg_x, one_minus_exp, truth, mine, diffm, (mpfr_ptr)0);
+    mpfr_clears(mx, mt, (mpfr_ptr)0);
 
     fprintf(stdout, "log1mexp - AVX512 |  %5.2lf%% of cases were 1 ULP off\n", (f64)count1 / (f64)count * 100.0); fflush(stdout);
 }
@@ -1320,7 +1404,7 @@ main(int argc, char *argv[])
 
 #endif
 
-#if 1 && defined(__AVX2__ ) 
+#if 0 && defined(__AVX2__ ) 
 
     ADD_TEST(test_exp_avx2);
     ADD_TEST(test_log_avx2);
@@ -1330,7 +1414,7 @@ main(int argc, char *argv[])
 
 #endif
 
-#if 1 && defined(__AVX512F__) && defined(__AVX512BW__)
+#if 0 && defined(__AVX512F__) && defined(__AVX512BW__)
 
     ADD_TEST(test_exp_avx512);
     ADD_TEST(test_log_avx512);
