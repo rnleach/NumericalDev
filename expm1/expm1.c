@@ -25,52 +25,33 @@ eagle_expm1(f64 x)
     _mm_store_sd(&r, _mm_fnmadd_sd(_mm_set_sd(n), _mm_set_sd(LN2_HI), _mm_set_sd(x)));
     _mm_store_sd(&r, _mm_fnmadd_sd(_mm_set_sd(n), _mm_set_sd(LN2_LO), _mm_set_sd(r)));
 
-    f64 const c09l = 0x1.74e6047471e31p-26;
-    f64 const c08l = 0x1.2552d8b0e8d0dp-22;
-    f64 const c07l = 0x1.71bd43a1344f8p-19;
-    f64 const c06l = 0x1.a019016b7cdf3p-16;
-    f64 const c05l = 0x1.a019fcd0c2641p-13;
-    f64 const c04l = 0x1.6c16c15e1545dp-10;
-    f64 const c03l = 0x1.11111110f9ea5p-7;
-    f64 const c02l = 0x1.55555555552fap-5;
-    f64 const c01l = 0x1.5555555555554p-3;
-    f64 const c00l = 0x1p-1;
+    f64 const c00 = 0x1p-1;
+    f64 const c01 = 0x1.5555555555555p-3;
+    f64 const c02 = 0x1.5555555555556p-5;
+    f64 const c03 = 0x1.111111111137cp-7;
+    f64 const c04 = 0x1.6c16c16c15fffp-10;
+    f64 const c05 = 0x1.a01a019eaafc6p-13;
+    f64 const c06 = 0x1.a01a01a815ae6p-16;
+    f64 const c07 = 0x1.71de404b5e836p-19;
+    f64 const c08 = 0x1.27e4d820b1d1cp-22;
+    f64 const c09 = 0x1.ae4dbfe848851p-26;
+    f64 const c10 = 0x1.1f78d10bcfc2dp-29;
+    f64 const c11 = 0x1.81472fc1fcd7bp-33;
 
-    f64 const c09h = 0x1.f11722efc30b3p-26;
-    f64 const c08h = 0x1.24c5bbba4267p-22;
-    f64 const c07h = 0x1.72070db75a794p-19;
-    f64 const c06h = 0x1.a018c180c98d3p-16;
-    f64 const c05h = 0x1.a01a07a764185p-13;
-    f64 const c04h = 0x1.6c16c15a8a8e3p-10;
-    f64 const c03h = 0x1.111111112e015p-7;
-    f64 const c02h = 0x1.5555555555265p-5;
-    f64 const c01h = 0x1.5555555555557p-3;
-    f64 const c00h = 0x1p-1;
+    f64 p = c11;
+    p = __builtin_fma(p, r, c10);
+    p = __builtin_fma(p, r, c09);
+    p = __builtin_fma(p, r, c08);
+    p = __builtin_fma(p, r, c07);
+    p = __builtin_fma(p, r, c06);
+    p = __builtin_fma(p, r, c05);
+    p = __builtin_fma(p, r, c04);
+    p = __builtin_fma(p, r, c03);
+    p = __builtin_fma(p, r, c02);
+    p = __builtin_fma(p, r, c01);
+    p = __builtin_fma(p, r, c00);
 
-    f64 pl = c09l;
-    pl = __builtin_fma(pl, r, c08l);
-    pl = __builtin_fma(pl, r, c07l);
-    pl = __builtin_fma(pl, r, c06l);
-    pl = __builtin_fma(pl, r, c05l);
-    pl = __builtin_fma(pl, r, c04l);
-    pl = __builtin_fma(pl, r, c03l);
-    pl = __builtin_fma(pl, r, c02l);
-    pl = __builtin_fma(pl, r, c01l);
-    pl = __builtin_fma(pl, r, c00l);
-
-    f64 ph = c09h;
-    ph = __builtin_fma(ph, r, c08h);
-    ph = __builtin_fma(ph, r, c07h);
-    ph = __builtin_fma(ph, r, c06h);
-    ph = __builtin_fma(ph, r, c05h);
-    ph = __builtin_fma(ph, r, c04h);
-    ph = __builtin_fma(ph, r, c03h);
-    ph = __builtin_fma(ph, r, c02h);
-    ph = __builtin_fma(ph, r, c01h);
-    ph = __builtin_fma(ph, r, c00h);
-
-    f64 p_tail = r < -0x1.c642ccb7dbaccp-90 ? pl : ph;
-    f64 p_full = r + r * r * p_tail;
+    f64 p_full = r + r * r * p;
 
     /* Safe Scale Back: exp(x) = p * 2^n */
     /* To maintain bit-for-bit parity with the vector logic under extreme scales,
@@ -104,7 +85,7 @@ eagle_expm1(f64 x)
     {
         /* Sequentially apply scaling to safely approach subnormals or maximum limits */
         f64 term1 = __builtin_fma(scale, r, scale - 1.0);
-        return __builtin_fma(scale, r * r * p_tail, term1);
+        return __builtin_fma(scale, r * r * p, term1);
     }
 }
 
@@ -140,58 +121,34 @@ eagle_avx2_expm1_pd(__m256d x)
     __m256d r = _mm256_fnmadd_pd(n, LN2_HI, x);
     r = _mm256_fnmadd_pd(n, LN2_LO, r);
 
-    /* Range mask - polynomial is broken into two ranges, a low and a high range */
-    __m256d low_mask = _mm256_cmp_pd(r, _mm256_set1_pd(-0x1.c642ccb7dbaccp-90), _CMP_LT_OQ);
-
-    /* Low range polynomial coefficients */
-    __m256d const c9l = _mm256_set1_pd(0x1.74e6047471e31p-26);
-    __m256d const c8l = _mm256_set1_pd(0x1.2552d8b0e8d0dp-22);
-    __m256d const c7l = _mm256_set1_pd(0x1.71bd43a1344f8p-19);
-    __m256d const c6l = _mm256_set1_pd(0x1.a019016b7cdf3p-16);
-    __m256d const c5l = _mm256_set1_pd(0x1.a019fcd0c2641p-13);
-    __m256d const c4l = _mm256_set1_pd(0x1.6c16c15e1545dp-10);
-    __m256d const c3l = _mm256_set1_pd(0x1.11111110f9ea5p-7);
-    __m256d const c2l = _mm256_set1_pd(0x1.55555555552fap-5);
-    __m256d const c1l = _mm256_set1_pd(0x1.5555555555554p-3);
-    __m256d const c0l = _mm256_set1_pd(0x1p-1);
-
-    /* High range polynomial coefficients */
-    __m256d const c9h = _mm256_set1_pd(0x1.f11722efc30b3p-26);
-    __m256d const c8h = _mm256_set1_pd(0x1.24c5bbba4267p-22);
-    __m256d const c7h = _mm256_set1_pd(0x1.72070db75a794p-19);
-    __m256d const c6h = _mm256_set1_pd(0x1.a018c180c98d3p-16);
-    __m256d const c5h = _mm256_set1_pd(0x1.a01a07a764185p-13);
-    __m256d const c4h = _mm256_set1_pd(0x1.6c16c15a8a8e3p-10);
-    __m256d const c3h = _mm256_set1_pd(0x1.111111112e015p-7);
-    __m256d const c2h = _mm256_set1_pd(0x1.5555555555265p-5);
-    __m256d const c1h = _mm256_set1_pd(0x1.5555555555557p-3);
-    __m256d const c0h = _mm256_set1_pd(0x1p-1);
+    __m256d const c00 = _mm256_set1_pd(0x1p-1);
+    __m256d const c01 = _mm256_set1_pd(0x1.5555555555555p-3);
+    __m256d const c02 = _mm256_set1_pd(0x1.5555555555556p-5);
+    __m256d const c03 = _mm256_set1_pd(0x1.111111111137cp-7);
+    __m256d const c04 = _mm256_set1_pd(0x1.6c16c16c15fffp-10);
+    __m256d const c05 = _mm256_set1_pd(0x1.a01a019eaafc6p-13);
+    __m256d const c06 = _mm256_set1_pd(0x1.a01a01a815ae6p-16);
+    __m256d const c07 = _mm256_set1_pd(0x1.71de404b5e836p-19);
+    __m256d const c08 = _mm256_set1_pd(0x1.27e4d820b1d1cp-22);
+    __m256d const c09 = _mm256_set1_pd(0x1.ae4dbfe848851p-26);
+    __m256d const c10 = _mm256_set1_pd(0x1.1f78d10bcfc2dp-29);
+    __m256d const c11 = _mm256_set1_pd(0x1.81472fc1fcd7bp-33);
 
     /* Standard Horner Evaluation */
-    __m256d pl = c9l;
-    pl = _mm256_fmadd_pd(pl, r, c8l);
-    pl = _mm256_fmadd_pd(pl, r, c7l);
-    pl = _mm256_fmadd_pd(pl, r, c6l);
-    pl = _mm256_fmadd_pd(pl, r, c5l);
-    pl = _mm256_fmadd_pd(pl, r, c4l);
-    pl = _mm256_fmadd_pd(pl, r, c3l);
-    pl = _mm256_fmadd_pd(pl, r, c2l);
-    pl = _mm256_fmadd_pd(pl, r, c1l);
-    pl = _mm256_fmadd_pd(pl, r, c0l);
+    __m256d p = c11;
+    p = _mm256_fmadd_pd(p, r, c10);
+    p = _mm256_fmadd_pd(p, r, c09);
+    p = _mm256_fmadd_pd(p, r, c08);
+    p = _mm256_fmadd_pd(p, r, c07);
+    p = _mm256_fmadd_pd(p, r, c06);
+    p = _mm256_fmadd_pd(p, r, c05);
+    p = _mm256_fmadd_pd(p, r, c04);
+    p = _mm256_fmadd_pd(p, r, c03);
+    p = _mm256_fmadd_pd(p, r, c02);
+    p = _mm256_fmadd_pd(p, r, c01);
+    p = _mm256_fmadd_pd(p, r, c00);
 
-    __m256d ph = c9h;
-    ph = _mm256_fmadd_pd(ph, r, c8h);
-    ph = _mm256_fmadd_pd(ph, r, c7h);
-    ph = _mm256_fmadd_pd(ph, r, c6h);
-    ph = _mm256_fmadd_pd(ph, r, c5h);
-    ph = _mm256_fmadd_pd(ph, r, c4h);
-    ph = _mm256_fmadd_pd(ph, r, c3h);
-    ph = _mm256_fmadd_pd(ph, r, c2h);
-    ph = _mm256_fmadd_pd(ph, r, c1h);
-    ph = _mm256_fmadd_pd(ph, r, c0h);
-
-    __m256d p_tail = _mm256_blendv_pd(ph, pl, low_mask);
-    __m256d p_full = _mm256_add_pd(r, _mm256_mul_pd(_mm256_mul_pd(r, r), p_tail));
+    __m256d p_full = _mm256_add_pd(r, _mm256_mul_pd(_mm256_mul_pd(r, r), p));
 
     /* AVX2-compatible arithmetic right shift by 1 for int64 */
     __m128i n_int32  = _mm256_cvtpd_epi32(n); 
@@ -228,7 +185,7 @@ eagle_avx2_expm1_pd(__m256d x)
     remaining_mask = _mm256_xor_pd(remaining_mask, _mm256_castsi256_pd(_mm256_set1_epi32(-1))); /* Bitwise NOT */
 
     __m256d term1 = _mm256_fmadd_pd(scale, r, _mm256_sub_pd(scale, _mm256_set1_pd(1.0)));
-    term = _mm256_fmadd_pd(scale, _mm256_mul_pd(_mm256_mul_pd(r, r), p_tail), term1);
+    term = _mm256_fmadd_pd(scale, _mm256_mul_pd(_mm256_mul_pd(r, r), p), term1);
 
     result = _mm256_blendv_pd(result, term, remaining_mask);
 
@@ -269,58 +226,34 @@ eagle_avx512_expm1_pd(__m512d x)
     __m512d r = _mm512_fnmadd_pd(n, LN2_HI, x);
     r = _mm512_fnmadd_pd(n, LN2_LO, r);
 
-    /* Range mask - polynomial is broken into two ranges, a low and a high range */
-    __mmask8 low_mask = _mm512_cmp_pd_mask(r, _mm512_set1_pd(-0x1.c642ccb7dbaccp-90), _CMP_LT_OQ);
-
-    /* Low range polynomial coefficients */
-    __m512d const c9l = _mm512_set1_pd(0x1.74e6047471e31p-26);
-    __m512d const c8l = _mm512_set1_pd(0x1.2552d8b0e8d0dp-22);
-    __m512d const c7l = _mm512_set1_pd(0x1.71bd43a1344f8p-19);
-    __m512d const c6l = _mm512_set1_pd(0x1.a019016b7cdf3p-16);
-    __m512d const c5l = _mm512_set1_pd(0x1.a019fcd0c2641p-13);
-    __m512d const c4l = _mm512_set1_pd(0x1.6c16c15e1545dp-10);
-    __m512d const c3l = _mm512_set1_pd(0x1.11111110f9ea5p-7);
-    __m512d const c2l = _mm512_set1_pd(0x1.55555555552fap-5);
-    __m512d const c1l = _mm512_set1_pd(0x1.5555555555554p-3);
-    __m512d const c0l = _mm512_set1_pd(0x1p-1);
-
-    /* High range polynomial coefficients */
-    __m512d const c9h = _mm512_set1_pd(0x1.f11722efc30b3p-26);
-    __m512d const c8h = _mm512_set1_pd(0x1.24c5bbba4267p-22);
-    __m512d const c7h = _mm512_set1_pd(0x1.72070db75a794p-19);
-    __m512d const c6h = _mm512_set1_pd(0x1.a018c180c98d3p-16);
-    __m512d const c5h = _mm512_set1_pd(0x1.a01a07a764185p-13);
-    __m512d const c4h = _mm512_set1_pd(0x1.6c16c15a8a8e3p-10);
-    __m512d const c3h = _mm512_set1_pd(0x1.111111112e015p-7);
-    __m512d const c2h = _mm512_set1_pd(0x1.5555555555265p-5);
-    __m512d const c1h = _mm512_set1_pd(0x1.5555555555557p-3);
-    __m512d const c0h = _mm512_set1_pd(0x1p-1);
+    __m512d const c00 = _mm512_set1_pd(0x1p-1);
+    __m512d const c01 = _mm512_set1_pd(0x1.5555555555555p-3);
+    __m512d const c02 = _mm512_set1_pd(0x1.5555555555556p-5);
+    __m512d const c03 = _mm512_set1_pd(0x1.111111111137cp-7);
+    __m512d const c04 = _mm512_set1_pd(0x1.6c16c16c15fffp-10);
+    __m512d const c05 = _mm512_set1_pd(0x1.a01a019eaafc6p-13);
+    __m512d const c06 = _mm512_set1_pd(0x1.a01a01a815ae6p-16);
+    __m512d const c07 = _mm512_set1_pd(0x1.71de404b5e836p-19);
+    __m512d const c08 = _mm512_set1_pd(0x1.27e4d820b1d1cp-22);
+    __m512d const c09 = _mm512_set1_pd(0x1.ae4dbfe848851p-26);
+    __m512d const c10 = _mm512_set1_pd(0x1.1f78d10bcfc2dp-29);
+    __m512d const c11 = _mm512_set1_pd(0x1.81472fc1fcd7bp-33);
 
     /* Standard Horner Evaluation */
-    __m512d pl = c9l;
-    pl = _mm512_fmadd_pd(pl, r, c8l);
-    pl = _mm512_fmadd_pd(pl, r, c7l);
-    pl = _mm512_fmadd_pd(pl, r, c6l);
-    pl = _mm512_fmadd_pd(pl, r, c5l);
-    pl = _mm512_fmadd_pd(pl, r, c4l);
-    pl = _mm512_fmadd_pd(pl, r, c3l);
-    pl = _mm512_fmadd_pd(pl, r, c2l);
-    pl = _mm512_fmadd_pd(pl, r, c1l);
-    pl = _mm512_fmadd_pd(pl, r, c0l);
+    __m512d p = c11;
+    p = _mm512_fmadd_pd(p, r, c10);
+    p = _mm512_fmadd_pd(p, r, c09);
+    p = _mm512_fmadd_pd(p, r, c08);
+    p = _mm512_fmadd_pd(p, r, c07);
+    p = _mm512_fmadd_pd(p, r, c06);
+    p = _mm512_fmadd_pd(p, r, c05);
+    p = _mm512_fmadd_pd(p, r, c04);
+    p = _mm512_fmadd_pd(p, r, c03);
+    p = _mm512_fmadd_pd(p, r, c02);
+    p = _mm512_fmadd_pd(p, r, c01);
+    p = _mm512_fmadd_pd(p, r, c00);
 
-    __m512d ph = c9h;
-    ph = _mm512_fmadd_pd(ph, r, c8h);
-    ph = _mm512_fmadd_pd(ph, r, c7h);
-    ph = _mm512_fmadd_pd(ph, r, c6h);
-    ph = _mm512_fmadd_pd(ph, r, c5h);
-    ph = _mm512_fmadd_pd(ph, r, c4h);
-    ph = _mm512_fmadd_pd(ph, r, c3h);
-    ph = _mm512_fmadd_pd(ph, r, c2h);
-    ph = _mm512_fmadd_pd(ph, r, c1h);
-    ph = _mm512_fmadd_pd(ph, r, c0h);
-
-    __m512d p_tail = _mm512_mask_mov_pd(ph, low_mask, pl);
-    __m512d p_full = _mm512_add_pd(r, _mm512_mul_pd(_mm512_mul_pd(r, r), p_tail));
+    __m512d p_full = _mm512_add_pd(r, _mm512_mul_pd(_mm512_mul_pd(r, r), p));
 
     /* Safe Scale Back: exp(x) = p * 2^n */
     /* To maintain bit-for-bit parity with the vector logic under extreme scales,
@@ -346,7 +279,7 @@ eagle_avx512_expm1_pd(__m512d x)
     /* Apply scaling sequentially: normal_res = (p * 2^n1) * 2^n2 */
     __mmask8 remaining_mask = ~(special_mask | large_mask | zero_mask);
     __m512d term1 = _mm512_fmadd_pd(scale, r, _mm512_sub_pd(scale, _mm512_set1_pd(1.0)));
-    term = _mm512_fmadd_pd(scale, _mm512_mul_pd(_mm512_mul_pd(r, r), p_tail), term1);
+    term = _mm512_fmadd_pd(scale, _mm512_mul_pd(_mm512_mul_pd(r, r), p), term1);
     result = _mm512_mask_mov_pd(result, remaining_mask, term);
 
     return result;
