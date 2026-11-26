@@ -14,7 +14,7 @@ print("\n\n");
 print(" Low Range: ", round(inf(I), double, RN));
 print("High Range: ", round(sup(I), double, RN));
 
-pf = fpminimax(f, 18, [|D...|], I);
+pf = fpminimax(f, 20, [|D...|], I);
 
 print("\n\n");
 for i from 0 to degree(pf) do {
@@ -27,38 +27,4 @@ print("\nMaximum absolute error (theoretical) f:\n", abs_err);
 
 rel_err = supnorm(x + x^2 * pf, log(1 + x), I, relative, 2^(-30));
 print("\nMaximum relative error (theoretical) f:\n", rel_err);
-
-// Break it into two polynomials
-mid_way = (inf(I) + (sup(I) - inf(I)) / 2.0) / 8.0;
-IL = [inf(I), mid_way];
-IH = [mid_way, sup(I)];
-
-print("\n\n");
-print(" Low Range: ", round(inf(IL), double, RN));
-print(" Mid Range: ", round(inf(IH), double, RN));
-print("High Range: ", round(sup(IH), double, RN));
-
-half_deg = 13;
-pL = fpminimax(f, half_deg, [|D...|], IL);
-pH = fpminimax(f, half_deg, [|D...|], IH);
-
-print("\n\nLow Range Polynomial:");
-for i from 0 to degree(pL) do {
-    print("pL[" @ i @ "] = ", coeff(pL, i));
-};
-
-print("\n\nHigh Range Polynomial:");
-for i from 0 to degree(pL) do {
-    print("pH[" @ i @ "] = ", coeff(pH, i));
-};
-print("\n\n");
-
-// Evaluate the theoretical maximum error of this polynomial
-abs_errL = supnorm(x + x^2 * pL, log(1 + x), IL, absolute, 2^(-30));
-abs_errH = supnorm(x + x^2 * pH, log(1 + x), IH, absolute, 2^(-30));
-print("\nMaximum absolute error (theoretical):\n", abs_errL, abs_errH);
-
-rel_errL = supnorm(x + x^2 * pL, log(1 + x), IL, relative, 2^(-30));
-rel_errH = supnorm(x + x^2 * pH, log(1 + x), IH, relative, 2^(-30));
-print("\nMaximum relative error (theoretical):\n", rel_errL, rel_errH);
 

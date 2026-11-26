@@ -14,71 +14,59 @@ eagle_log1p(f64 x)
     if((x >= small_x_range_low) & (x <= small_x_range_high))
     {
 
-        f64 const c00l = -0x1p-1;
-        f64 const c01l = 0x1.5555555555165p-2;
-        f64 const c02l = -0x1.00000000013a6p-2;
-        f64 const c03l = 0x1.999999b4d68bdp-3;
-        f64 const c04l = -0x1.55554ce5cc951p-3;
-        f64 const c05l = 0x1.249375d994fa6p-3;
-        f64 const c06l = -0x1.ffcf7eb545b5cp-4;
-        f64 const c07l = 0x1.c99c47194fe02p-4;
-        f64 const c08l = -0x1.83879be1f1843p-4;
-        f64 const c09l = 0x1.f949fac831c28p-4;
-        f64 const c10l = 0x1.9562af4786612p-5;
-        f64 const c11l = 0x1.bdcd703e7e36dp-2;
-        f64 const c12l = 0x1.0a0fd969850b5p-1;
-        f64 const c13l = 0x1.1baa608cdc3abp-1;
+        f64 const c00 = -0x1p-1;
+        f64 const c01 = 0x1.555555555555dp-2;
+        f64 const c02 = -0x1.fffffffffff96p-3;
+        f64 const c03 = 0x1.9999999997539p-3;
+        f64 const c04 = -0x1.555555555cabap-3;
+        f64 const c05 = 0x1.249249262df8ap-3;
+        f64 const c06 = -0x1.fffffffbce703p-4;
+        f64 const c07 = 0x1.c71c70bc068a6p-4;
+        f64 const c08 = -0x1.9999999c93ea6p-4;
+        f64 const c09 = 0x1.745d4634b62aep-4;
+        f64 const c10 = -0x1.5555832c1a87ap-4;
+        f64 const c11 = 0x1.3b0eeabfe4366p-4;
+        f64 const c12 = -0x1.2489989b9a832p-4;
+        f64 const c13 = 0x1.1159011b4deb6p-4;
+        f64 const c14 = -0x1.00c09795798c4p-4;
+        f64 const c15 = 0x1.dd75dae546896p-5;
+        f64 const c16 = -0x1.b59d93cf0b7fdp-5;
+        f64 const c17 = 0x1.b9138d908b63bp-5;
+        f64 const c18 = -0x1.fcf84fe53897bp-5;
+        f64 const c19 = 0x1.d44165bff8e26p-5;
+        f64 const c20 = -0x1.978d46ca90ecbp-6;
 
-        f64 const c00h = -0x1.fffffffffffcap-2;
-        f64 const c01h = 0x1.5555555552045p-2;
-        f64 const c02h = -0x1.fffffffd9a965p-3;
-        f64 const c03h = 0x1.99999929c014ap-3;
-        f64 const c04h = -0x1.55554965c5ef8p-3;
-        f64 const c05h = 0x1.249178e095642p-3;
-        f64 const c06h = -0x1.ffecd2ace2b05p-4;
-        f64 const c07h = 0x1.c67e15c92fa62p-4;
-        f64 const c08h = -0x1.95efc62d0d9e2p-4;
-        f64 const c09h = 0x1.64978be73f82p-4;
-        f64 const c10h = -0x1.23a8be6d340bdp-4;
-        f64 const c11h = 0x1.90c9dc821d8abp-5;
-        f64 const c12h = -0x1.86f803157f71fp-6;
-        f64 const c13h = 0x1.83f42484d9c35p-8;
+        f64 const x2  = x * x;
+        f64 const x4  = x2 * x2;
+        f64 const x8  = x4 * x4;
+        f64 const x16 = x8 * x8;
 
-        f64 suml = c13l;
-        suml = __builtin_fma(suml, x, c12l);
-        suml = __builtin_fma(suml, x, c11l);
-        suml = __builtin_fma(suml, x, c10l);
-        suml = __builtin_fma(suml, x, c09l);
-        suml = __builtin_fma(suml, x, c08l);
-        suml = __builtin_fma(suml, x, c07l);
-        suml = __builtin_fma(suml, x, c06l);
-        suml = __builtin_fma(suml, x, c05l);
-        suml = __builtin_fma(suml, x, c04l);
-        suml = __builtin_fma(suml, x, c03l);
-        suml = __builtin_fma(suml, x, c02l);
-        suml = __builtin_fma(suml, x, c01l);
-        suml = __builtin_fma(suml, x, c00l);
+        f64 const t0  = __builtin_fma(c01, x, c00);
+        f64 const t1  = __builtin_fma(c03, x, c02);
+        f64 const t2  = __builtin_fma(c05, x, c04);
+        f64 const t3  = __builtin_fma(c07, x, c06);
+        f64 const t4  = __builtin_fma(c09, x, c08);
+        f64 const t5  = __builtin_fma(c11, x, c10);
+        f64 const t6  = __builtin_fma(c13, x, c12);
+        f64 const t7  = __builtin_fma(c15, x, c14);
+        f64 const t8  = __builtin_fma(c17, x, c16);
+        f64 const t9  = __builtin_fma(c19, x, c18);
+        f64 const t10 = c20;
 
-        f64 sumh = c13h;
-        sumh = __builtin_fma(sumh, x, c12h);
-        sumh = __builtin_fma(sumh, x, c11h);
-        sumh = __builtin_fma(sumh, x, c10h);
-        sumh = __builtin_fma(sumh, x, c09h);
-        sumh = __builtin_fma(sumh, x, c08h);
-        sumh = __builtin_fma(sumh, x, c07h);
-        sumh = __builtin_fma(sumh, x, c06h);
-        sumh = __builtin_fma(sumh, x, c05h);
-        sumh = __builtin_fma(sumh, x, c04h);
-        sumh = __builtin_fma(sumh, x, c03h);
-        sumh = __builtin_fma(sumh, x, c02h);
-        sumh = __builtin_fma(sumh, x, c01h);
-        sumh = __builtin_fma(sumh, x, c00h);
+        f64 const s0 = __builtin_fma(t1, x2, t0);   /* 0–3              */
+        f64 const s1 = __builtin_fma(t3, x2, t2);   /* 4–7              */
+        f64 const s2 = __builtin_fma(t5, x2, t4);   /* 8–11             */
+        f64 const s3 = __builtin_fma(t7, x2, t6);   /* 12–15            */
+        f64 const s4 = __builtin_fma(t9, x2, t8);   /* 16–19            */
 
-        f64 const break_point = 0x1.f0ed99bed9b2ep-8;
+        f64 const u0 = __builtin_fma(s1, x4, s0);   /* 0–7              */
+        f64 const u1 = __builtin_fma(s3, x4, s2);   /* 8–15             */
 
-        f64 sum = x < break_point ? suml : sumh;
+        f64 p = __builtin_fma(u1, x8, u0);          /* 0–15             */
+        f64 const v = __builtin_fma(t10, x4, s4);   /* 16–20 (relative) */
+        p = __builtin_fma(v, x16, p);
 
-        return x + x * x * sum; 
+        return __builtin_fma(p, x2, x);
     }
     else
     {
@@ -109,72 +97,59 @@ eagle_avx2_log1p_pd(__m256d x)
     /* Handle small x */
     __m256d small_x_result;
     {
-        /* Break point between the lower (code above) range polynomial and the upper (code below) range polynomial. */
-        __m256d const break_point = _mm256_set1_pd(0x1.f0ed99bed9b2ep-8);
-        __m256d const break_mask = _mm256_cmp_pd(x, break_point, _CMP_LE_OQ);
+        __m256d const c00 = _mm256_set1_pd(-0x1p-1);
+        __m256d const c01 = _mm256_set1_pd(0x1.555555555555dp-2);
+        __m256d const c02 = _mm256_set1_pd(-0x1.fffffffffff96p-3);
+        __m256d const c03 = _mm256_set1_pd(0x1.9999999997539p-3);
+        __m256d const c04 = _mm256_set1_pd(-0x1.555555555cabap-3);
+        __m256d const c05 = _mm256_set1_pd(0x1.249249262df8ap-3);
+        __m256d const c06 = _mm256_set1_pd(-0x1.fffffffbce703p-4);
+        __m256d const c07 = _mm256_set1_pd(0x1.c71c70bc068a6p-4);
+        __m256d const c08 = _mm256_set1_pd(-0x1.9999999c93ea6p-4);
+        __m256d const c09 = _mm256_set1_pd(0x1.745d4634b62aep-4);
+        __m256d const c10 = _mm256_set1_pd(-0x1.5555832c1a87ap-4);
+        __m256d const c11 = _mm256_set1_pd(0x1.3b0eeabfe4366p-4);
+        __m256d const c12 = _mm256_set1_pd(-0x1.2489989b9a832p-4);
+        __m256d const c13 = _mm256_set1_pd(0x1.1159011b4deb6p-4);
+        __m256d const c14 = _mm256_set1_pd(-0x1.00c09795798c4p-4);
+        __m256d const c15 = _mm256_set1_pd(0x1.dd75dae546896p-5);
+        __m256d const c16 = _mm256_set1_pd(-0x1.b59d93cf0b7fdp-5);
+        __m256d const c17 = _mm256_set1_pd(0x1.b9138d908b63bp-5);
+        __m256d const c18 = _mm256_set1_pd(-0x1.fcf84fe53897bp-5);
+        __m256d const c19 = _mm256_set1_pd(0x1.d44165bff8e26p-5);
+        __m256d const c20 = _mm256_set1_pd(-0x1.978d46ca90ecbp-6);
 
-        __m256d const c00l = _mm256_set1_pd(-0x1p-1);
-        __m256d const c01l = _mm256_set1_pd(0x1.5555555555165p-2);
-        __m256d const c02l = _mm256_set1_pd(-0x1.00000000013a6p-2);
-        __m256d const c03l = _mm256_set1_pd(0x1.999999b4d68bdp-3);
-        __m256d const c04l = _mm256_set1_pd(-0x1.55554ce5cc951p-3);
-        __m256d const c05l = _mm256_set1_pd(0x1.249375d994fa6p-3);
-        __m256d const c06l = _mm256_set1_pd(-0x1.ffcf7eb545b5cp-4);
-        __m256d const c07l = _mm256_set1_pd(0x1.c99c47194fe02p-4);
-        __m256d const c08l = _mm256_set1_pd(-0x1.83879be1f1843p-4);
-        __m256d const c09l = _mm256_set1_pd(0x1.f949fac831c28p-4);
-        __m256d const c10l = _mm256_set1_pd(0x1.9562af4786612p-5);
-        __m256d const c11l = _mm256_set1_pd(0x1.bdcd703e7e36dp-2);
-        __m256d const c12l = _mm256_set1_pd(0x1.0a0fd969850b5p-1);
-        __m256d const c13l = _mm256_set1_pd(0x1.1baa608cdc3abp-1);
+        __m256d const x2  = _mm256_mul_pd(x, x);
+        __m256d const x4  = _mm256_mul_pd(x2, x2);
+        __m256d const x8  = _mm256_mul_pd(x4, x4);
+        __m256d const x16 = _mm256_mul_pd(x8, x8);
 
-        __m256d const c00h = _mm256_set1_pd(-0x1.fffffffffffcap-2);
-        __m256d const c01h = _mm256_set1_pd(0x1.5555555552045p-2);
-        __m256d const c02h = _mm256_set1_pd(-0x1.fffffffd9a965p-3);
-        __m256d const c03h = _mm256_set1_pd(0x1.99999929c014ap-3);
-        __m256d const c04h = _mm256_set1_pd(-0x1.55554965c5ef8p-3);
-        __m256d const c05h = _mm256_set1_pd(0x1.249178e095642p-3);
-        __m256d const c06h = _mm256_set1_pd(-0x1.ffecd2ace2b05p-4);
-        __m256d const c07h = _mm256_set1_pd(0x1.c67e15c92fa62p-4);
-        __m256d const c08h = _mm256_set1_pd(-0x1.95efc62d0d9e2p-4);
-        __m256d const c09h = _mm256_set1_pd(0x1.64978be73f82p-4);
-        __m256d const c10h = _mm256_set1_pd(-0x1.23a8be6d340bdp-4);
-        __m256d const c11h = _mm256_set1_pd(0x1.90c9dc821d8abp-5);
-        __m256d const c12h = _mm256_set1_pd(-0x1.86f803157f71fp-6);
-        __m256d const c13h = _mm256_set1_pd(0x1.83f42484d9c35p-8);
+        __m256d const t0  = _mm256_fmadd_pd(c01, x, c00);
+        __m256d const t1  = _mm256_fmadd_pd(c03, x, c02);
+        __m256d const t2  = _mm256_fmadd_pd(c05, x, c04);
+        __m256d const t3  = _mm256_fmadd_pd(c07, x, c06);
+        __m256d const t4  = _mm256_fmadd_pd(c09, x, c08);
+        __m256d const t5  = _mm256_fmadd_pd(c11, x, c10);
+        __m256d const t6  = _mm256_fmadd_pd(c13, x, c12);
+        __m256d const t7  = _mm256_fmadd_pd(c15, x, c14);
+        __m256d const t8  = _mm256_fmadd_pd(c17, x, c16);
+        __m256d const t9  = _mm256_fmadd_pd(c19, x, c18);
+        __m256d const t10 = c20;
 
-        __m256d suml = c13l;
-        suml = _mm256_fmadd_pd(suml, x, c12l);
-        suml = _mm256_fmadd_pd(suml, x, c11l);
-        suml = _mm256_fmadd_pd(suml, x, c10l);
-        suml = _mm256_fmadd_pd(suml, x, c09l);
-        suml = _mm256_fmadd_pd(suml, x, c08l);
-        suml = _mm256_fmadd_pd(suml, x, c07l);
-        suml = _mm256_fmadd_pd(suml, x, c06l);
-        suml = _mm256_fmadd_pd(suml, x, c05l);
-        suml = _mm256_fmadd_pd(suml, x, c04l);
-        suml = _mm256_fmadd_pd(suml, x, c03l);
-        suml = _mm256_fmadd_pd(suml, x, c02l);
-        suml = _mm256_fmadd_pd(suml, x, c01l);
-        suml = _mm256_fmadd_pd(suml, x, c00l);
+        __m256d const s0 = _mm256_fmadd_pd(t1, x2, t0);   /* 0–3              */
+        __m256d const s1 = _mm256_fmadd_pd(t3, x2, t2);   /* 4–7              */
+        __m256d const s2 = _mm256_fmadd_pd(t5, x2, t4);   /* 8–11             */
+        __m256d const s3 = _mm256_fmadd_pd(t7, x2, t6);   /* 12–15            */
+        __m256d const s4 = _mm256_fmadd_pd(t9, x2, t8);   /* 16–19            */
 
-        __m256d sumh = c13h;
-        sumh = _mm256_fmadd_pd(sumh, x, c12h);
-        sumh = _mm256_fmadd_pd(sumh, x, c11h);
-        sumh = _mm256_fmadd_pd(sumh, x, c10h);
-        sumh = _mm256_fmadd_pd(sumh, x, c09h);
-        sumh = _mm256_fmadd_pd(sumh, x, c08h);
-        sumh = _mm256_fmadd_pd(sumh, x, c07h);
-        sumh = _mm256_fmadd_pd(sumh, x, c06h);
-        sumh = _mm256_fmadd_pd(sumh, x, c05h);
-        sumh = _mm256_fmadd_pd(sumh, x, c04h);
-        sumh = _mm256_fmadd_pd(sumh, x, c03h);
-        sumh = _mm256_fmadd_pd(sumh, x, c02h);
-        sumh = _mm256_fmadd_pd(sumh, x, c01h);
-        sumh = _mm256_fmadd_pd(sumh, x, c00h);
+        __m256d const u0 = _mm256_fmadd_pd(s1, x4, s0);   /* 0–7              */
+        __m256d const u1 = _mm256_fmadd_pd(s3, x4, s2);   /* 8–15             */
 
-        __m256d sum = _mm256_blendv_pd(sumh, suml, break_mask);
-        small_x_result = _mm256_add_pd(x, _mm256_mul_pd(_mm256_mul_pd(x, x), sum));
+        __m256d p = _mm256_fmadd_pd(u1, x8, u0);          /* 0–15             */
+        __m256d const v = _mm256_fmadd_pd(t10, x4, s4);   /* 16–20 (relative) */
+        p = _mm256_fmadd_pd(v, x16, p);
+
+        small_x_result = _mm256_fmadd_pd(p, x2, x);
     }
 
     /* Handle NOT small x */
@@ -218,72 +193,59 @@ eagle_avx512_log1p_pd(__m512d x)
     /* Handle small x */
     __m512d small_x_result;
     {
-        /* Break point between the lower (code above) range polynomial and the upper (code below) range polynomial. */
-        __m512d const break_point = _mm512_set1_pd(0x1.f0ed99bed9b2ep-8);
-        __mmask8 const break_mask = _mm512_cmp_pd_mask(x, break_point, _CMP_LE_OQ);
+        __m512d const c00 = _mm512_set1_pd(-0x1p-1);
+        __m512d const c01 = _mm512_set1_pd(0x1.555555555555dp-2);
+        __m512d const c02 = _mm512_set1_pd(-0x1.fffffffffff96p-3);
+        __m512d const c03 = _mm512_set1_pd(0x1.9999999997539p-3);
+        __m512d const c04 = _mm512_set1_pd(-0x1.555555555cabap-3);
+        __m512d const c05 = _mm512_set1_pd(0x1.249249262df8ap-3);
+        __m512d const c06 = _mm512_set1_pd(-0x1.fffffffbce703p-4);
+        __m512d const c07 = _mm512_set1_pd(0x1.c71c70bc068a6p-4);
+        __m512d const c08 = _mm512_set1_pd(-0x1.9999999c93ea6p-4);
+        __m512d const c09 = _mm512_set1_pd(0x1.745d4634b62aep-4);
+        __m512d const c10 = _mm512_set1_pd(-0x1.5555832c1a87ap-4);
+        __m512d const c11 = _mm512_set1_pd(0x1.3b0eeabfe4366p-4);
+        __m512d const c12 = _mm512_set1_pd(-0x1.2489989b9a832p-4);
+        __m512d const c13 = _mm512_set1_pd(0x1.1159011b4deb6p-4);
+        __m512d const c14 = _mm512_set1_pd(-0x1.00c09795798c4p-4);
+        __m512d const c15 = _mm512_set1_pd(0x1.dd75dae546896p-5);
+        __m512d const c16 = _mm512_set1_pd(-0x1.b59d93cf0b7fdp-5);
+        __m512d const c17 = _mm512_set1_pd(0x1.b9138d908b63bp-5);
+        __m512d const c18 = _mm512_set1_pd(-0x1.fcf84fe53897bp-5);
+        __m512d const c19 = _mm512_set1_pd(0x1.d44165bff8e26p-5);
+        __m512d const c20 = _mm512_set1_pd(-0x1.978d46ca90ecbp-6);
 
-        __m512d const c00l = _mm512_set1_pd(-0x1p-1);
-        __m512d const c01l = _mm512_set1_pd(0x1.5555555555165p-2);
-        __m512d const c02l = _mm512_set1_pd(-0x1.00000000013a6p-2);
-        __m512d const c03l = _mm512_set1_pd(0x1.999999b4d68bdp-3);
-        __m512d const c04l = _mm512_set1_pd(-0x1.55554ce5cc951p-3);
-        __m512d const c05l = _mm512_set1_pd(0x1.249375d994fa6p-3);
-        __m512d const c06l = _mm512_set1_pd(-0x1.ffcf7eb545b5cp-4);
-        __m512d const c07l = _mm512_set1_pd(0x1.c99c47194fe02p-4);
-        __m512d const c08l = _mm512_set1_pd(-0x1.83879be1f1843p-4);
-        __m512d const c09l = _mm512_set1_pd(0x1.f949fac831c28p-4);
-        __m512d const c10l = _mm512_set1_pd(0x1.9562af4786612p-5);
-        __m512d const c11l = _mm512_set1_pd(0x1.bdcd703e7e36dp-2);
-        __m512d const c12l = _mm512_set1_pd(0x1.0a0fd969850b5p-1);
-        __m512d const c13l = _mm512_set1_pd(0x1.1baa608cdc3abp-1);
+        __m512d const x2  = _mm512_mul_pd(x, x);
+        __m512d const x4  = _mm512_mul_pd(x2, x2);
+        __m512d const x8  = _mm512_mul_pd(x4, x4);
+        __m512d const x16 = _mm512_mul_pd(x8, x8);
 
-        __m512d const c00h = _mm512_set1_pd(-0x1.fffffffffffcap-2);
-        __m512d const c01h = _mm512_set1_pd(0x1.5555555552045p-2);
-        __m512d const c02h = _mm512_set1_pd(-0x1.fffffffd9a965p-3);
-        __m512d const c03h = _mm512_set1_pd(0x1.99999929c014ap-3);
-        __m512d const c04h = _mm512_set1_pd(-0x1.55554965c5ef8p-3);
-        __m512d const c05h = _mm512_set1_pd(0x1.249178e095642p-3);
-        __m512d const c06h = _mm512_set1_pd(-0x1.ffecd2ace2b05p-4);
-        __m512d const c07h = _mm512_set1_pd(0x1.c67e15c92fa62p-4);
-        __m512d const c08h = _mm512_set1_pd(-0x1.95efc62d0d9e2p-4);
-        __m512d const c09h = _mm512_set1_pd(0x1.64978be73f82p-4);
-        __m512d const c10h = _mm512_set1_pd(-0x1.23a8be6d340bdp-4);
-        __m512d const c11h = _mm512_set1_pd(0x1.90c9dc821d8abp-5);
-        __m512d const c12h = _mm512_set1_pd(-0x1.86f803157f71fp-6);
-        __m512d const c13h = _mm512_set1_pd(0x1.83f42484d9c35p-8);
+        __m512d const t0  = _mm512_fmadd_pd(c01, x, c00);
+        __m512d const t1  = _mm512_fmadd_pd(c03, x, c02);
+        __m512d const t2  = _mm512_fmadd_pd(c05, x, c04);
+        __m512d const t3  = _mm512_fmadd_pd(c07, x, c06);
+        __m512d const t4  = _mm512_fmadd_pd(c09, x, c08);
+        __m512d const t5  = _mm512_fmadd_pd(c11, x, c10);
+        __m512d const t6  = _mm512_fmadd_pd(c13, x, c12);
+        __m512d const t7  = _mm512_fmadd_pd(c15, x, c14);
+        __m512d const t8  = _mm512_fmadd_pd(c17, x, c16);
+        __m512d const t9  = _mm512_fmadd_pd(c19, x, c18);
+        __m512d const t10 = c20;
 
-        __m512d suml = c13l;
-        suml = _mm512_fmadd_pd(suml, x, c12l);
-        suml = _mm512_fmadd_pd(suml, x, c11l);
-        suml = _mm512_fmadd_pd(suml, x, c10l);
-        suml = _mm512_fmadd_pd(suml, x, c09l);
-        suml = _mm512_fmadd_pd(suml, x, c08l);
-        suml = _mm512_fmadd_pd(suml, x, c07l);
-        suml = _mm512_fmadd_pd(suml, x, c06l);
-        suml = _mm512_fmadd_pd(suml, x, c05l);
-        suml = _mm512_fmadd_pd(suml, x, c04l);
-        suml = _mm512_fmadd_pd(suml, x, c03l);
-        suml = _mm512_fmadd_pd(suml, x, c02l);
-        suml = _mm512_fmadd_pd(suml, x, c01l);
-        suml = _mm512_fmadd_pd(suml, x, c00l);
+        __m512d const s0 = _mm512_fmadd_pd(t1, x2, t0);   /* 0–3              */
+        __m512d const s1 = _mm512_fmadd_pd(t3, x2, t2);   /* 4–7              */
+        __m512d const s2 = _mm512_fmadd_pd(t5, x2, t4);   /* 8–11             */
+        __m512d const s3 = _mm512_fmadd_pd(t7, x2, t6);   /* 12–15            */
+        __m512d const s4 = _mm512_fmadd_pd(t9, x2, t8);   /* 16–19            */
 
-        __m512d sumh = c13h;
-        sumh = _mm512_fmadd_pd(sumh, x, c12h);
-        sumh = _mm512_fmadd_pd(sumh, x, c11h);
-        sumh = _mm512_fmadd_pd(sumh, x, c10h);
-        sumh = _mm512_fmadd_pd(sumh, x, c09h);
-        sumh = _mm512_fmadd_pd(sumh, x, c08h);
-        sumh = _mm512_fmadd_pd(sumh, x, c07h);
-        sumh = _mm512_fmadd_pd(sumh, x, c06h);
-        sumh = _mm512_fmadd_pd(sumh, x, c05h);
-        sumh = _mm512_fmadd_pd(sumh, x, c04h);
-        sumh = _mm512_fmadd_pd(sumh, x, c03h);
-        sumh = _mm512_fmadd_pd(sumh, x, c02h);
-        sumh = _mm512_fmadd_pd(sumh, x, c01h);
-        sumh = _mm512_fmadd_pd(sumh, x, c00h);
+        __m512d const u0 = _mm512_fmadd_pd(s1, x4, s0);   /* 0–7              */
+        __m512d const u1 = _mm512_fmadd_pd(s3, x4, s2);   /* 8–15             */
 
-        __m512d sum = _mm512_mask_blend_pd(break_mask, sumh, suml);
-        small_x_result = _mm512_add_pd(x, _mm512_mul_pd(_mm512_mul_pd(x, x), sum));
+        __m512d p = _mm512_fmadd_pd(u1, x8, u0);          /* 0–15             */
+        __m512d const v = _mm512_fmadd_pd(t10, x4, s4);   /* 16–20 (relative) */
+        p = _mm512_fmadd_pd(v, x16, p);
+
+        small_x_result = _mm512_fmadd_pd(p, x2, x);
     }
 
     /* Handle NOT small x */
