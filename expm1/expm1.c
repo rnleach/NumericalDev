@@ -38,20 +38,26 @@ eagle_expm1(f64 x)
     f64 const c10 = 0x1.1f78d10bcfc2dp-29;
     f64 const c11 = 0x1.81472fc1fcd7bp-33;
 
-    f64 p = c11;
-    p = __builtin_fma(p, r, c10);
-    p = __builtin_fma(p, r, c09);
-    p = __builtin_fma(p, r, c08);
-    p = __builtin_fma(p, r, c07);
-    p = __builtin_fma(p, r, c06);
-    p = __builtin_fma(p, r, c05);
-    p = __builtin_fma(p, r, c04);
-    p = __builtin_fma(p, r, c03);
-    p = __builtin_fma(p, r, c02);
-    p = __builtin_fma(p, r, c01);
-    p = __builtin_fma(p, r, c00);
+    /* Estrin's scheme polynomial evaluation. */
+    f64 const r2 = r * r;
+    f64 const r4 = r2 * r2;
+    f64 const r8 = r4 * r4;
 
-    f64 p_full = r + r * r * p;
+    f64 const t0 = __builtin_fma(c01, r, c00);
+    f64 const t1 = __builtin_fma(c03, r, c02);
+    f64 const t2 = __builtin_fma(c05, r, c04);
+    f64 const t3 = __builtin_fma(c07, r, c06);
+    f64 const t4 = __builtin_fma(c09, r, c08);
+    f64 const t5 = __builtin_fma(c11, r, c10);
+
+    f64 const s0 = __builtin_fma(t1, r2, t0);
+    f64 const s1 = __builtin_fma(t3, r2, t2);
+    f64 const s2 = __builtin_fma(t5, r2, t4);
+
+    f64 p = __builtin_fma(s1, r4, s0);
+    p = __builtin_fma(s2, r8, p);
+
+    f64 p_full = __builtin_fma(p, r2, r);
 
     /* Safe Scale Back: exp(x) = p * 2^n */
     /* To maintain bit-for-bit parity with the vector logic under extreme scales,
@@ -134,21 +140,26 @@ eagle_avx2_expm1_pd(__m256d x)
     __m256d const c10 = _mm256_set1_pd(0x1.1f78d10bcfc2dp-29);
     __m256d const c11 = _mm256_set1_pd(0x1.81472fc1fcd7bp-33);
 
-    /* Standard Horner Evaluation */
-    __m256d p = c11;
-    p = _mm256_fmadd_pd(p, r, c10);
-    p = _mm256_fmadd_pd(p, r, c09);
-    p = _mm256_fmadd_pd(p, r, c08);
-    p = _mm256_fmadd_pd(p, r, c07);
-    p = _mm256_fmadd_pd(p, r, c06);
-    p = _mm256_fmadd_pd(p, r, c05);
-    p = _mm256_fmadd_pd(p, r, c04);
-    p = _mm256_fmadd_pd(p, r, c03);
-    p = _mm256_fmadd_pd(p, r, c02);
-    p = _mm256_fmadd_pd(p, r, c01);
-    p = _mm256_fmadd_pd(p, r, c00);
+    /* Estrin's scheme polynomial evaluation. */
+    __m256d const r2 = _mm256_mul_pd(r, r);
+    __m256d const r4 = _mm256_mul_pd(r2, r2);
+    __m256d const r8 = _mm256_mul_pd(r4, r4);
 
-    __m256d p_full = _mm256_add_pd(r, _mm256_mul_pd(_mm256_mul_pd(r, r), p));
+    __m256d const t0 = _mm256_fmadd_pd(c01, r, c00);
+    __m256d const t1 = _mm256_fmadd_pd(c03, r, c02);
+    __m256d const t2 = _mm256_fmadd_pd(c05, r, c04);
+    __m256d const t3 = _mm256_fmadd_pd(c07, r, c06);
+    __m256d const t4 = _mm256_fmadd_pd(c09, r, c08);
+    __m256d const t5 = _mm256_fmadd_pd(c11, r, c10);
+
+    __m256d const s0 = _mm256_fmadd_pd(t1, r2, t0);
+    __m256d const s1 = _mm256_fmadd_pd(t3, r2, t2);
+    __m256d const s2 = _mm256_fmadd_pd(t5, r2, t4);
+
+    __m256d p = _mm256_fmadd_pd(s1, r4, s0);
+    p = _mm256_fmadd_pd(s2, r8, p);
+
+    __m256d p_full = _mm256_fmadd_pd(p, r2, r);
 
     /* AVX2-compatible arithmetic right shift by 1 for int64 */
     __m128i n_int32  = _mm256_cvtpd_epi32(n); 
@@ -239,21 +250,26 @@ eagle_avx512_expm1_pd(__m512d x)
     __m512d const c10 = _mm512_set1_pd(0x1.1f78d10bcfc2dp-29);
     __m512d const c11 = _mm512_set1_pd(0x1.81472fc1fcd7bp-33);
 
-    /* Standard Horner Evaluation */
-    __m512d p = c11;
-    p = _mm512_fmadd_pd(p, r, c10);
-    p = _mm512_fmadd_pd(p, r, c09);
-    p = _mm512_fmadd_pd(p, r, c08);
-    p = _mm512_fmadd_pd(p, r, c07);
-    p = _mm512_fmadd_pd(p, r, c06);
-    p = _mm512_fmadd_pd(p, r, c05);
-    p = _mm512_fmadd_pd(p, r, c04);
-    p = _mm512_fmadd_pd(p, r, c03);
-    p = _mm512_fmadd_pd(p, r, c02);
-    p = _mm512_fmadd_pd(p, r, c01);
-    p = _mm512_fmadd_pd(p, r, c00);
+    /* Estrin's scheme polynomial evaluation. */
+    __m512d const r2 = _mm512_mul_pd(r, r);
+    __m512d const r4 = _mm512_mul_pd(r2, r2);
+    __m512d const r8 = _mm512_mul_pd(r4, r4);
 
-    __m512d p_full = _mm512_add_pd(r, _mm512_mul_pd(_mm512_mul_pd(r, r), p));
+    __m512d const t0 = _mm512_fmadd_pd(c01, r, c00);
+    __m512d const t1 = _mm512_fmadd_pd(c03, r, c02);
+    __m512d const t2 = _mm512_fmadd_pd(c05, r, c04);
+    __m512d const t3 = _mm512_fmadd_pd(c07, r, c06);
+    __m512d const t4 = _mm512_fmadd_pd(c09, r, c08);
+    __m512d const t5 = _mm512_fmadd_pd(c11, r, c10);
+
+    __m512d const s0 = _mm512_fmadd_pd(t1, r2, t0);
+    __m512d const s1 = _mm512_fmadd_pd(t3, r2, t2);
+    __m512d const s2 = _mm512_fmadd_pd(t5, r2, t4);
+
+    __m512d p = _mm512_fmadd_pd(s1, r4, s0);
+    p = _mm512_fmadd_pd(s2, r8, p);
+
+    __m512d p_full = _mm512_fmadd_pd(p, r2, r);
 
     /* Safe Scale Back: exp(x) = p * 2^n */
     /* To maintain bit-for-bit parity with the vector logic under extreme scales,
