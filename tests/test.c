@@ -27,7 +27,7 @@ _Static_assert(DBL_HAS_SUBNORM == 1, "Subnormal numbers not supported.");
 static f64 const min_exp_arg = -0x1.74910d52d3050p+0009;
 static f64 const max_exp_arg = +0x1.62e42fefa39efp+0009;
 
-#define COUNT_TRIALS (8LL * 100000LL)
+#define COUNT_TRIALS (8LL * 1000000LL)
 
 static inline f64
 ulp_error_vs_mpfr(f64 x, f64 my_val, mpfr_t mx, mpfr_t mtrue)

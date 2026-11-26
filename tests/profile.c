@@ -1,5 +1,6 @@
 #include <inttypes.h>
 #include <math.h>
+#include <stdatomic.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -26,7 +27,7 @@ static f64 const max_log_arg = 0x1.fffffffffffffp1023;
 static f64 const min_log1p_arg = -2.0;
 static f64 const max_log1p_arg = 0x1.fffffffffffffp1023;
 
-#define COUNT_TRIALS (8 * 100000000)
+#define COUNT_TRIALS (8 * 10000000)
 
 static inline void
 allocate_buffers_and_fill_xs(f64 min, f64 max, f64 **xs, f64 **vals, MagAllocator *alloc)
@@ -47,131 +48,161 @@ allocate_buffers_and_fill_xs(f64 min, f64 max, f64 **xs, f64 **vals, MagAllocato
 static inline void
 profile_exp_std(f64 *xs, f64 *std_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-std-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("exp-std-test");
         f64 eval = exp(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         std_vals[i] = eval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_expm1_std(f64 *xs, f64 *std_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-std-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("expm1-std-test");
         f64 eval = expm1(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         std_vals[i] = eval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log_std(f64 *xs, f64 *std_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-std-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log-std-test");
         f64 lval = log(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         std_vals[i] = lval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1p_std(f64 *xs, f64 *std_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-std-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1p-std-test");
         f64 lval = log1p(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         std_vals[i] = lval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1mexp_std(f64 *xs, f64 *std_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-std-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1mexp-std-test");
         f64 lval = test_std_log1mexp(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         std_vals[i] = lval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_exp_scalar(f64 *xs, f64 *scalar_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-scalar-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("exp-scalar-test");
         f64 eval = eagle_exp(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         scalar_vals[i] = eval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_expm1_scalar(f64 *xs, f64 *scalar_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-scalar-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("expm1-scalar-test");
         f64 eval = eagle_expm1(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         scalar_vals[i] = eval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log_scalar(f64 *xs, f64 *scalar_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-scalar-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log-scalar-test");
         f64 lval = eagle_log(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         scalar_vals[i] = lval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1p_scalar(f64 *xs, f64 *scalar_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-scalar-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1p-scalar-test");
         f64 lval = eagle_log1p(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         scalar_vals[i] = lval;
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1mexp_scalar(f64 *xs, f64 *scalar_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-scalar-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; ++i)
     {
         f64 val = xs[i];
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1mexp-scalar-test");
         f64 lval = eagle_log1mexp(val);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         scalar_vals[i] = lval;
     }
-    COY_END_PROFILE(ap);
 }
 
 #if __AVX2__
@@ -179,66 +210,81 @@ profile_log1mexp_scalar(f64 *xs, f64 *scalar_vals)
 static inline void
 profile_exp_avx2(f64 *xs, f64 *avx2_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-avx2-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 4)
     {
         __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("exp-avx2-test");
         __m256d evec = eagle_avx2_exp_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm256_storeu_pd(&avx2_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_expm1_avx2(f64 *xs, f64 *avx2_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-avx2-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 4)
     {
         __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("expm1-avx2-test");
         __m256d evec = eagle_avx2_expm1_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm256_storeu_pd(&avx2_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log_avx2(f64 *xs, f64 *avx2_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx2-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 4)
     {
         __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log-avx2-test");
         __m256d evec = eagle_avx2_log_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm256_storeu_pd(&avx2_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1p_avx2(f64 *xs, f64 *avx2_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 4)
     {
         __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1p-avx2-test");
         __m256d evec = eagle_avx2_log1p_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm256_storeu_pd(&avx2_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1mexp_avx2(f64 *xs, f64 *avx2_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx2-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 4)
     {
         __m256d xvec = _mm256_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1mexp-avx2-test");
         __m256d evec = eagle_avx2_log1mexp_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm256_storeu_pd(&avx2_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 #endif
@@ -248,66 +294,81 @@ profile_log1mexp_avx2(f64 *xs, f64 *avx2_vals)
 static inline void
 profile_exp_avx512(f64 *xs, f64 *avx512_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("exp-avx512-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 8)
     {
         __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("exp-avx512-test");
         __m512d evec = eagle_avx512_exp_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm512_storeu_pd(&avx512_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_expm1_avx512(f64 *xs, f64 *avx512_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("expm1-avx512-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 8)
     {
         __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("expm1-avx512-test");
         __m512d evec = eagle_avx512_expm1_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm512_storeu_pd(&avx512_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log_avx512(f64 *xs, f64 *avx512_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log-avx512-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 8)
     {
         __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log-avx512-test");
         __m512d evec = eagle_avx512_log_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm512_storeu_pd(&avx512_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1p_avx512(f64 *xs, f64 *avx512_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 8)
     {
         __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1p-avx512-test");
         __m512d evec = eagle_avx512_log1p_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm512_storeu_pd(&avx512_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 static inline void
 profile_log1mexp_avx512(f64 *xs, f64 *avx512_vals)
 {
-    CoyProfileAnchor ap = COY_START_PROFILE_BLOCK("log1mexp-avx512-test");
+    CoyProfileAnchor ap;
     for(size i = 0; i < COUNT_TRIALS; i += 8)
     {
         __m512d xvec = _mm512_loadu_pd(&xs[i]);
+        atomic_signal_fence(memory_order_seq_cst);
+        ap = COY_START_PROFILE_BLOCK("log1mexp-avx512-test");
         __m512d evec = eagle_avx512_log1mexp_pd(xvec);
+        COY_END_PROFILE(ap);
+        atomic_signal_fence(memory_order_seq_cst);
         _mm512_storeu_pd(&avx512_vals[i], evec);
     }
-    COY_END_PROFILE(ap);
 }
 
 #endif
