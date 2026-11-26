@@ -83,19 +83,36 @@ eagle_log1p(f64 x)
 static inline __m256d
 eagle_avx2_log1p_pd(__m256d x)
 {
-    __m256d isnan_mask = _mm256_cmp_pd(x, x, _CMP_NEQ_UQ);
-    __m256d const lt_neg_one_mask = _mm256_cmp_pd(x, _mm256_set1_pd(-1.0), _CMP_LT_OQ);
-    isnan_mask = _mm256_or_pd(isnan_mask, lt_neg_one_mask);
+    __m256d final = _mm256_set1_pd(EAGLE_NAN);
 
     __m256d const neg_one_mask = _mm256_cmp_pd(x, _mm256_set1_pd(-1.0), _CMP_EQ_OQ);
+    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_NEG_INF), neg_one_mask);
+
     __m256d const posinf_mask  = _mm256_cmp_pd(x, _mm256_set1_pd(EAGLE_POS_INF), _CMP_EQ_OQ);
+    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_POS_INF), posinf_mask);
 
     __m256d const small_x_range_low = _mm256_cmp_pd(x, _mm256_set1_pd(-0x1.2bec333018867p-2), _CMP_GE_OQ);
     __m256d const small_x_range_high = _mm256_cmp_pd(x, _mm256_set1_pd(0x1.a827999fcef32p-2), _CMP_LE_OQ);
     __m256d const small_mask = _mm256_and_pd(small_x_range_low, small_x_range_high);
+    
+    __m256d const reals_mask = _mm256_cmp_pd(x, _mm256_set1_pd(-1.0), _CMP_GT_OQ);
+    i32 reals_exist  =  _mm256_movemask_pd(reals_mask);
+    i32 smalls_exist = _mm256_movemask_pd(small_mask);
+    i32 reals_not_smalls = reals_exist ^ smalls_exist;
+
+    /* Handle NOT small x */
+    if(reals_not_smalls)
+    {
+        __m256d s_hi, s_lo;
+        eagle_avx2_twosum(_mm256_set1_pd(1.0), x, &s_hi, &s_lo);
+
+        __m256d corr = _mm256_div_pd(s_lo, s_hi);
+        __m256d not_small_x_result = _mm256_add_pd(eagle_avx2_log_pd(s_hi), corr);
+        final = _mm256_blendv_pd(final, not_small_x_result, reals_mask);
+    }
 
     /* Handle small x */
-    __m256d small_x_result;
+    if(smalls_exist)
     {
         __m256d const c00 = _mm256_set1_pd(-0x1p-1);
         __m256d const c01 = _mm256_set1_pd(0x1.555555555555dp-2);
@@ -149,24 +166,10 @@ eagle_avx2_log1p_pd(__m256d x)
         __m256d const v = _mm256_fmadd_pd(t10, x4, s4);   /* 16–20 (relative) */
         p = _mm256_fmadd_pd(v, x16, p);
 
-        small_x_result = _mm256_fmadd_pd(p, x2, x);
+        __m256d small_x_result = _mm256_fmadd_pd(p, x2, x);
+
+        final = _mm256_blendv_pd(final, small_x_result, small_mask);
     }
-
-    /* Handle NOT small x */
-    __m256d not_small_x_result;
-    {
-        __m256d s_hi, s_lo;
-        eagle_avx2_twosum(_mm256_set1_pd(1.0), x, &s_hi, &s_lo);
-
-        __m256d corr = _mm256_div_pd(s_lo, s_hi);
-        not_small_x_result = _mm256_add_pd(eagle_avx2_log_pd(s_hi), corr);
-    }
-
-    __m256d final = _mm256_blendv_pd(not_small_x_result, small_x_result, small_mask);
-
-    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_NAN), isnan_mask);
-    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_POS_INF), posinf_mask);
-    final = _mm256_blendv_pd(final, _mm256_set1_pd(EAGLE_NEG_INF), neg_one_mask);
 
     return final;
 
@@ -179,19 +182,34 @@ eagle_avx2_log1p_pd(__m256d x)
 static inline __m512d
 eagle_avx512_log1p_pd(__m512d x)
 {
-    __mmask8 isnan_mask = _mm512_cmp_pd_mask(x, x, _CMP_NEQ_UQ);
-    __mmask8 const lt_neg_one_mask = _mm512_cmp_pd_mask(x, _mm512_set1_pd(-1.0), _CMP_LT_OQ);
-    isnan_mask = isnan_mask | lt_neg_one_mask;
+    __m512d final = _mm512_set1_pd(EAGLE_NAN);
 
     __mmask8 const neg_one_mask = _mm512_cmp_pd_mask(x, _mm512_set1_pd(-1.0), _CMP_EQ_OQ);
+    final = _mm512_mask_blend_pd(neg_one_mask, final, _mm512_set1_pd(EAGLE_NEG_INF));
+
     __mmask8 const posinf_mask  = _mm512_cmp_pd_mask(x, _mm512_set1_pd(EAGLE_POS_INF), _CMP_EQ_OQ);
+    final = _mm512_mask_blend_pd(posinf_mask, final, _mm512_set1_pd(EAGLE_POS_INF));
+
+    __mmask8 const reals_mask = _mm512_cmp_pd_mask(x, _mm512_set1_pd(-1.0), _CMP_GT_OQ);
 
     __mmask8 const small_x_range_low = _mm512_cmp_pd_mask(x, _mm512_set1_pd(-0x1.2bec333018867p-2), _CMP_GE_OQ);
     __mmask8 const small_x_range_high = _mm512_cmp_pd_mask(x, _mm512_set1_pd(0x1.a827999fcef32p-2), _CMP_LE_OQ);
-    __mmask8 const small_mask = small_x_range_low & small_x_range_high;
+    __mmask8 const smalls_mask = small_x_range_low & small_x_range_high;
+
+    /* Handle NOT small x */
+    if(reals_mask)
+    {
+        __m512d s_hi, s_lo;
+        eagle_avx512_twosum(_mm512_set1_pd(1.0), x, &s_hi, &s_lo);
+
+        __m512d corr = _mm512_div_pd(s_lo, s_hi);
+        __m512d not_small_x_result = _mm512_add_pd(eagle_avx512_log_pd(s_hi), corr);
+
+        final = _mm512_mask_blend_pd(reals_mask, final, not_small_x_result);
+    }
 
     /* Handle small x */
-    __m512d small_x_result;
+    if(smalls_mask)
     {
         __m512d const c00 = _mm512_set1_pd(-0x1p-1);
         __m512d const c01 = _mm512_set1_pd(0x1.555555555555dp-2);
@@ -243,26 +261,13 @@ eagle_avx512_log1p_pd(__m512d x)
 
         __m512d p = _mm512_fmadd_pd(u1, x8, u0);          /* 0–15             */
         __m512d const v = _mm512_fmadd_pd(t10, x4, s4);   /* 16–20 (relative) */
+
         p = _mm512_fmadd_pd(v, x16, p);
 
-        small_x_result = _mm512_fmadd_pd(p, x2, x);
+        __m512d small_x_result = _mm512_fmadd_pd(p, x2, x);
+
+        final = _mm512_mask_blend_pd(smalls_mask, final, small_x_result);
     }
-
-    /* Handle NOT small x */
-    __m512d not_small_x_result;
-    {
-        __m512d s_hi, s_lo;
-        eagle_avx512_twosum(_mm512_set1_pd(1.0), x, &s_hi, &s_lo);
-
-        __m512d corr = _mm512_div_pd(s_lo, s_hi);
-        not_small_x_result = _mm512_add_pd(eagle_avx512_log_pd(s_hi), corr);
-    }
-
-    __m512d final = _mm512_mask_blend_pd(small_mask, not_small_x_result, small_x_result);
-
-    final = _mm512_mask_blend_pd(isnan_mask, final, _mm512_set1_pd(EAGLE_NAN));
-    final = _mm512_mask_blend_pd(posinf_mask, final, _mm512_set1_pd(EAGLE_POS_INF));
-    final = _mm512_mask_blend_pd(neg_one_mask, final, _mm512_set1_pd(EAGLE_NEG_INF));
 
     return final;
 }
