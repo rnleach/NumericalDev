@@ -33,11 +33,24 @@ static inline f64 eagle_nearbyint(f64 x);
 
 static inline void eagle_twosum(f64 a, f64 b, f64 *s, f64 *e);
 
-static inline f64 eagle_exp(f64 x);
-static inline f64 eagle_expm1(f64 x);
-static inline f64 eagle_log(f64 x);
-static inline f64 eagle_log1p(f64 x);
-static inline f64 eagle_log1mexp(f64 x);
+#define eagle_softplus(x) eagle_log1pexp(x)
+static inline f64 eagle_exp(f64 x);                 /* exp(x)                                 */
+static inline f64 eagle_expm1(f64 x);               /* exp(x) - 1                             */
+static inline f64 eagle_log(f64 x);                 /* ln(x)                                  */
+static inline f64 eagle_log1p(f64 x);               /* ln(1 + x)                              */
+static inline f64 eagle_log1mexp(f64 x);            /* ln(1 - exp(-x))                        */ /* NOTE: common alternative formulations */
+static inline f64 eagle_log1pexp(f64 x);            /* ln(1 + exp(x))                         */ /* TODO */
+static inline f64 eagle_logaddexp(f64 x, f64 y);    /* ln(exp(x) + exp(y))                    */ /* TODO */
+static inline f64 eagle_logsumexp(size n, f64 *xs); /* ln(exp(x1) + exp(x2) + ... + exp(xn))  */ /* TODO */
+static inline f64 eagle_logistic(f64 x);            /* ln(1 / (1 + exp(-x)))                  */ /* TODO */
+static inline f64 eagle_loglogistic(f64 x);         /* ln(logistic(x))                        */ /* TODO */
+static inline f64 eagle_logit(f64 x);               /* ln(x / (1 - x))                        */ /* TODO */
+
+/* NOTE: Consider if needed
+ * softmax: xi -> exp(xi) / sum(exp(xj) for all j) 
+ * softmax where inputs are in the log domain
+ * softmax where inputs and outputs are in the log domain
+ */
 
 /*---------------------------------------------------------------------------------------------------------------------------
  *
